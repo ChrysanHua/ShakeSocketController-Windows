@@ -36,23 +36,15 @@ namespace ShakeSocketController.Utils
 
         public static IPAddress GetLocalIP()
         {
-            //IPAddress[] ips = Dns.GetHostAddresses(Dns.GetHostName());
-            //foreach (var item in ips)
-            //{
-            //    if (!IPAddress.IsLoopback(item) && item.AddressFamily == AddressFamily.InterNetwork)
-            //        Console.WriteLine(item);
-            //}
-            //Console.WriteLine(NetworkInterface.GetIsNetworkAvailable());
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
+            {
+                //because it is udp socket, it will perform an invalid connect operation
+                socket.Connect("8.8.8.8", 12000);
+                //but we can still get the IP from it
+                return (socket.LocalEndPoint as IPEndPoint).Address;
+            }
 
-            //string localIP;
-            //using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp))
-            //{
-            //    socket.Connect("8.8.8.8", 12000);
-            //    IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
-            //    localIP = endPoint.Address.ToString();
-            //}
-            //Console.WriteLine(localIP);
-
+            /******the second effective method, but it's inefficient******
             foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (nic.OperationalStatus == OperationalStatus.Up
@@ -60,7 +52,8 @@ namespace ShakeSocketController.Utils
                     || nic.NetworkInterfaceType == NetworkInterfaceType.Ethernet))
                 {
                     IPInterfaceProperties ipProperties = nic.GetIPProperties();
-                    if (ipProperties.GetIPv4Properties().IsDhcpEnabled)
+                    if (ipProperties.GetIPv4Properties().IsDhcpEnabled
+                        && ipProperties.GatewayAddresses.Count >= 1)
                     {
                         foreach (UnicastIPAddressInformation ipInfo in ipProperties.UnicastAddresses)
                         {
@@ -74,6 +67,18 @@ namespace ShakeSocketController.Utils
                 }
             }
             return null;
+            */
+
+
+            /******invalid code, just a usage note******
+            IPAddress[] ips = Dns.GetHostAddresses(Dns.GetHostName());
+            foreach (var item in ips)
+            {
+                if (!IPAddress.IsLoopback(item) && item.AddressFamily == AddressFamily.InterNetwork)
+                    Console.WriteLine(item);
+            }
+            Console.WriteLine(NetworkInterface.GetIsNetworkAvailable());
+            */
         }
 
 
