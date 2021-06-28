@@ -31,7 +31,7 @@ namespace ShakeSocketController.Controller
         public event EventHandler TCPDisConnect;
 
 
-        public bool GetIsBCStop() => broadcaster.GetIsBCStop();
+        public bool GetIsBCStop() => broadcaster.IsBCStop;
 
         public Configuration GetCurrentConfig() => config;
 
