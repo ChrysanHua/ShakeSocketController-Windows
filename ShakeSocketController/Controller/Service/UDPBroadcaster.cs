@@ -7,13 +7,13 @@ namespace ShakeSocketController.Controller.Service
 {
     class UDPBroadcaster
     {
-        private const int BROADCAST_INTERVAL = 3000;
-
+        private readonly int BROADCAST_INTERVAL;
         private readonly IPEndPoint bcEP;
         private Socket broadcaster;
         private byte[] bcBuf;
 
-        private readonly AutoResetEvent endAutoSignal;
+        private readonly ManualResetEvent endManualSignal;
+        private readonly AutoResetEvent reloadAutoSignal;
         private readonly object bcStopLock = new object();
         private bool isBCStop = true;
 
@@ -24,7 +24,7 @@ namespace ShakeSocketController.Controller.Service
         }
 
 
-        public UDPBroadcaster(int port)
+        public UDPBroadcaster(int port, int bcInterval = 3000)
         {
             broadcaster = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
                 ProtocolType.Udp)
@@ -36,7 +36,9 @@ namespace ShakeSocketController.Controller.Service
             //socket must be bound with local IP to ensure effective broadcasting
             broadcaster.Bind(new IPEndPoint(Utils.SysUtil.GetLocalIP(), 0));
             bcEP = new IPEndPoint(IPAddress.Broadcast, port);
-            endAutoSignal = new AutoResetEvent(false);
+            this.BROADCAST_INTERVAL = bcInterval;
+            endManualSignal = new ManualResetEvent(false);
+            reloadAutoSignal = new AutoResetEvent(false);
         }
 
         public void BeginBroadcast(byte[] msgData)
@@ -48,32 +50,37 @@ namespace ShakeSocketController.Controller.Service
         public void EndBroadcast()
         {
             if (IsBCStop) return;
-            //set the end signal
-            endAutoSignal.Set();
+            //set as end signal
+            endManualSignal.Set();
+            //reset the reload signal(if it has)
+            reloadAutoSignal.Reset();
         }
 
         public void Reload()
         {
-            if (broadcaster == null) return;
+            if (broadcaster == null)
+                throw new Exception("UDPBroadcaster has been closed!");
+            if (bcBuf == null)
+                throw new Exception("MsgData cannot be null!");
+
             try
             {
-                //stop broadcasting first
-                EndBroadcast();
-
-                while (endAutoSignal.WaitOne(0))
+                if (IsBCStop)
                 {
-                    //get the end signal, need to resend!
-                    //be sure to wait for the old broadcast to stop
-                    endAutoSignal.Set();
+                    //flag start status
+                    IsBCStop = false;
+                    //set as BC signal
+                    endManualSignal.Reset();
+                    Logging.Debug(broadcaster.LocalEndPoint, bcEP, bcBuf.Length, "begin broadcast");
+                    //start broadcasting
+                    broadcaster.BeginSendTo(bcBuf, 0, bcBuf.Length, SocketFlags.None,
+                        bcEP, new AsyncCallback(BroadcastCallback), bcBuf);
                 }
-
-                //flag start status
-                IsBCStop = false;
-
-                Logging.Debug(broadcaster.LocalEndPoint, bcEP, bcBuf.Length, "begin broadcast");
-                //start broadcasting
-                broadcaster.BeginSendTo(bcBuf, 0, bcBuf.Length, SocketFlags.None,
-                    bcEP, new AsyncCallback(BroadcastCallback), bcBuf);
+                else if (!endManualSignal.WaitOne(0))
+                {
+                    //the BC is working, set as reload signal
+                    reloadAutoSignal.Set();
+                }
             }
             catch (Exception e)
             {
@@ -88,7 +95,8 @@ namespace ShakeSocketController.Controller.Service
             try
             {
                 EndBroadcast();
-                endAutoSignal.Close();
+                endManualSignal.Close();
+                reloadAutoSignal.Close();
 
                 broadcaster.Shutdown(SocketShutdown.Both);
                 broadcaster.Close();
@@ -113,18 +121,29 @@ namespace ShakeSocketController.Controller.Service
                 byte[] oldBcBuf = (byte[])ar.AsyncState;
                 if (len != oldBcBuf.Length)
                     throw new Exception("广播异常，操作系统未能正确地发送广播信息！");
+
                 //wait a moment
-                if (endAutoSignal.WaitOne(BROADCAST_INTERVAL))
+                if (endManualSignal.WaitOne(BROADCAST_INTERVAL))
                 {
                     //get the endBC signal, stop broadcasting and flag stop status
                     IsBCStop = true;
                     Logging.Debug("end broadcast!");
-                    return;
                 }
+                else
+                {
+                    //there is no end signal, go ahead
+                    byte[] nextBcBuf = oldBcBuf;
+                    if (reloadAutoSignal.WaitOne(0))
+                    {
+                        //get the reload signal, use new buf
+                        nextBcBuf = this.bcBuf;
+                        Logging.Debug(broadcaster.LocalEndPoint, bcEP, nextBcBuf.Length, "reload broadcast");
+                    }
 
-                //there is no end signal, go ahead
-                broadcaster?.BeginSendTo(oldBcBuf, 0, oldBcBuf.Length, SocketFlags.None,
-                    bcEP, new AsyncCallback(BroadcastCallback), oldBcBuf);
+                    //broadcast again
+                    broadcaster?.BeginSendTo(nextBcBuf, 0, nextBcBuf.Length, SocketFlags.None,
+                        bcEP, new AsyncCallback(BroadcastCallback), nextBcBuf);
+                }
             }
             catch (Exception e)
             {
