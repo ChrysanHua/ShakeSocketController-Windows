@@ -5,7 +5,7 @@ using System.Threading;
 
 namespace ShakeSocketController.Controller.Service
 {
-    class UDPBroadcaster
+    public class UDPBroadcaster
     {
         private readonly int BROADCAST_INTERVAL;
         private readonly IPEndPoint bcEP;
@@ -115,12 +115,14 @@ namespace ShakeSocketController.Controller.Service
 
         private void BroadcastCallback(IAsyncResult ar)
         {
+            if (broadcaster == null) return;
             try
             {
                 int len = broadcaster.EndSendTo(ar);
                 byte[] oldBcBuf = (byte[])ar.AsyncState;
                 if (len != oldBcBuf.Length)
-                    throw new Exception("广播异常，操作系统未能正确地发送广播信息！");
+                    throw new Exception($"广播异常，操作系统未能正确地发送广播信息！ " +
+                        $"(A/P len={len}/{oldBcBuf.Length})");
 
                 //wait a moment
                 if (endManualSignal.WaitOne(BROADCAST_INTERVAL))
