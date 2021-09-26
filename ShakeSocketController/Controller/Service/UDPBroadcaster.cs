@@ -17,6 +17,9 @@ namespace ShakeSocketController.Controller.Service
         private readonly object bcStopLock = new object();
         private bool isBCStop = true;
 
+        public event EventHandler BroadcasterException;
+        public event EventHandler OnceBCSucceed;
+
         public bool IsBCStop
         {
             get { lock (bcStopLock) { return isBCStop; } }
@@ -24,7 +27,7 @@ namespace ShakeSocketController.Controller.Service
         }
 
 
-        public UDPBroadcaster(int port, int bcInterval = 3000)
+        public UDPBroadcaster(int bcPort, int bcInterval = 3000)
         {
             broadcaster = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
                 ProtocolType.Udp)
@@ -35,15 +38,15 @@ namespace ShakeSocketController.Controller.Service
             };
             //socket must be bound with local IP to ensure effective broadcasting
             broadcaster.Bind(new IPEndPoint(Utils.SysUtil.GetLocalIP(), 0));
-            bcEP = new IPEndPoint(IPAddress.Broadcast, port);
+            bcEP = new IPEndPoint(IPAddress.Broadcast, bcPort);
             this.BROADCAST_INTERVAL = bcInterval;
             endManualSignal = new ManualResetEvent(false);
             reloadAutoSignal = new AutoResetEvent(false);
         }
 
-        public void BeginBroadcast(byte[] msgData)
+        public void BeginBroadcast(byte[] msgDataBuf)
         {
-            bcBuf = msgData;
+            bcBuf = msgDataBuf;
             Reload();
         }
 
@@ -86,6 +89,7 @@ namespace ShakeSocketController.Controller.Service
             {
                 Logging.Error(e);
                 IsBCStop = true;
+                BroadcasterException?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -116,6 +120,7 @@ namespace ShakeSocketController.Controller.Service
         private void BroadcastCallback(IAsyncResult ar)
         {
             if (broadcaster == null) return;
+
             try
             {
                 int len = broadcaster.EndSendTo(ar);
@@ -123,6 +128,8 @@ namespace ShakeSocketController.Controller.Service
                 if (len != oldBcBuf.Length)
                     throw new Exception($"广播异常，操作系统未能正确地发送广播信息！ " +
                         $"(A/P len={len}/{oldBcBuf.Length})");
+
+                OnceBCSucceed?.Invoke(this, EventArgs.Empty);
 
                 //wait a moment
                 if (endManualSignal.WaitOne(BROADCAST_INTERVAL))
@@ -151,6 +158,7 @@ namespace ShakeSocketController.Controller.Service
             {
                 Logging.Error(e);
                 IsBCStop = true;
+                BroadcasterException?.Invoke(this, EventArgs.Empty);
             }
         }
     }
