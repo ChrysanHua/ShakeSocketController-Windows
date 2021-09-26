@@ -10,7 +10,6 @@ namespace ShakeSocketController.Controller.Service
     public class UDPHandler
     {
         private readonly int REC_BUF_SIZE;
-        private readonly TransactionController _controller;
 
         private Socket udpSocket;
         private EndPoint remoteEP = new IPEndPoint(IPAddress.Any, 0);
@@ -19,6 +18,12 @@ namespace ShakeSocketController.Controller.Service
         private readonly ManualResetEvent handleManualSignal;
         private readonly object recStopLock = new object();
         private bool isRecStop = true;
+
+        public event EventHandler<HandleUDPEventArgs> HandleUDPReceived;
+        public event EventHandler<HandleUDPEventArgs> MissUDPReceived;
+        public event EventHandler<HandleUDPEventArgs> SendException;
+        public event EventHandler<AbnormalDataEventArgs> AbnormalDataReceived;
+        public event EventHandler HandlerException;
 
         public bool IsRecStop
         {
@@ -42,9 +47,8 @@ namespace ShakeSocketController.Controller.Service
         }
 
 
-        public UDPHandler(TransactionController controller, int recBufSize = 4096)
+        public UDPHandler(int recBufSize = 4096)
         {
-            this._controller = controller;
             this.REC_BUF_SIZE = recBufSize;
             recBuf = new byte[this.REC_BUF_SIZE];
             udpSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram,
@@ -94,6 +98,7 @@ namespace ShakeSocketController.Controller.Service
             {
                 Logging.Error(e);
                 IsRecStop = true;
+                HandlerException?.Invoke(this, EventArgs.Empty);
             }
         }
 
@@ -151,8 +156,14 @@ namespace ShakeSocketController.Controller.Service
                 if (handleManualSignal.WaitOne(0))
                 {
                     //get the handle signal
-                    //do something by controller in here
-                    _controller.HandleUDPMsg(recBuf, len, remoteEP as IPEndPoint);
+                    HandleUDPReceived?.Invoke(this,
+                        new HandleUDPEventArgs(ByteUtil.SubByte(recBuf, 0, len), remoteEP));
+                }
+                else
+                {
+                    //without the handle signal
+                    MissUDPReceived?.Invoke(this,
+                        new HandleUDPEventArgs(ByteUtil.SubByte(recBuf, 0, len), remoteEP));
                 }
 
                 //receive again
@@ -166,14 +177,16 @@ namespace ShakeSocketController.Controller.Service
                 //this is caused by the sender sending large datagrams maliciously
                 Logging.Error(e);
                 Logging.Info($"发送方({remoteEP})未按既定大小发送数据报！");
-                //notify the controller
+                AbnormalDataReceived?.Invoke(this,
+                    new AbnormalDataEventArgs(remoteEP, e.SocketErrorCode));
             }
             catch (SocketException e) when (e.SocketErrorCode == SocketError.ConnectionReset)
             {
                 //this is caused by the sender sending 'rst' maliciously
                 Logging.Error(e);
                 Logging.Info($"发送方({remoteEP})强迫关闭了我们的现有连接！");
-                //notify the controller
+                AbnormalDataReceived?.Invoke(this,
+                    new AbnormalDataEventArgs(remoteEP, e.SocketErrorCode));
             }
             catch (Exception e)
             {
@@ -191,6 +204,7 @@ namespace ShakeSocketController.Controller.Service
             }
 
             IsRecStop = true;
+            HandlerException?.Invoke(this, EventArgs.Empty);
         }
 
         public void SendTo(byte[] dataBuf, IPEndPoint targetEP)
@@ -217,7 +231,7 @@ namespace ShakeSocketController.Controller.Service
                 {
                     //unhandled exception
                     Logging.Error(e);
-                    //notify the controller
+                    SendException?.Invoke(this, new HandleUDPEventArgs(dataBuf, targetEP));
                 }
             }
         }
@@ -226,9 +240,9 @@ namespace ShakeSocketController.Controller.Service
         {
             if (udpSocket == null) return;
 
+            var so = ar.AsyncState as SocketAsyncState;
             try
             {
-                var so = ar.AsyncState as SocketAsyncState;
                 int len = so.WorkSocket.EndSendTo(ar);
                 if (len != so.DataBuffer.Length)
                     throw new Exception($"发送异常，操作系统未能正确地发送UDP数据报！ " +
@@ -241,7 +255,8 @@ namespace ShakeSocketController.Controller.Service
                 if (!(e is NullReferenceException) && !(e is ObjectDisposedException))
                 {
                     Logging.Error(e);
-                    //notify the controller
+                    SendException?.Invoke(this,
+                        new HandleUDPEventArgs(so.DataBuffer, so.RemoteEP));
                 }
             }
         }

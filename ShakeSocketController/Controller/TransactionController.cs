@@ -42,7 +42,8 @@ namespace ShakeSocketController.Controller
         {
             deviceDictionary = new ConcurrentDictionary<IPAddress, DeviceInfo>();
             broadcaster = new UDPBroadcaster(BC_PORT);
-            udpHandler = new UDPHandler(this);
+            udpHandler = new UDPHandler();
+            udpHandler.HandleUDPReceived += UdpHandler_HandleUDPReceived;
         }
 
         public void Start()
@@ -166,13 +167,13 @@ namespace ShakeSocketController.Controller
             return true;
         }
 
-        public void HandleUDPMsg(byte[] msgDataBuf, int bufLen, IPEndPoint remoteEP)
+        private void UdpHandler_HandleUDPReceived(object sender, HandleUDPEventArgs e)
         {
-            if (ShouldHandleMsg(remoteEP.Address))
+            if (ShouldHandleMsg(e.IPE.Address))
             {
-                MsgPacket packet = MessageAdapter.PackDataBuf(msgDataBuf, bufLen);
+                MsgPacket packet = MessageAdapter.PackDataBuf(e.DataBuf, e.Length);
                 Logging.Debug($"type:{packet.TypeStr}, data:{packet.DataStr}.");
-                MessageAdapter.CreateMsgHandler(packet)?.Handle(this, remoteEP.Address);
+                MessageAdapter.CreateMsgHandler(packet)?.Handle(this, e.IPE.Address);
             }
         }
 
