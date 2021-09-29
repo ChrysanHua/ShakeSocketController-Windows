@@ -40,7 +40,7 @@ namespace ShakeSocketController.Model
 
         public static MsgPacket Parse(string typeStr, string dataStr)
         {
-            return new MsgPacket(ByteUtil.FixLen(StrUtil.StrToByte(typeStr), TYPE_LENGTH),
+            return new MsgPacket(ByteUtil.Resize(StrUtil.StrToByte(typeStr), TYPE_LENGTH),
                 StrUtil.StrToByte(dataStr));
         }
 
