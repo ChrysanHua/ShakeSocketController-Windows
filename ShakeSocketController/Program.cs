@@ -35,7 +35,12 @@ namespace ShakeSocketController
                 }
 
                 Directory.SetCurrentDirectory(Application.StartupPath);
-                Logging.Init();
+
+                if (!Logging.Init("ShakeSocketController.log"))
+                {
+                    MessageBox.Show("日志模块初始化失败！");
+                    return;
+                }
 
                 MainController = new TransactionController();
                 MenuController = new MenuViewController(MainController);

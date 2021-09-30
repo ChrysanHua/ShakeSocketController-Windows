@@ -11,36 +11,42 @@ namespace ShakeSocketController.Controller
 {
     public static class Logging
     {
-        private static string logFilePath;
-
         private static FileStream _fs;
         private static StreamWriterWithTimestamp _sw;
 
-        public static string LogFilePath { get; }
+        public static string LogFilePath { get; private set; }
 
-        public static bool Init()
+        public static bool Init(string logFileName)
         {
+            if (!string.IsNullOrEmpty(LogFilePath))
+                throw new Exception("Logging has been initialized!");
+
             try
             {
-                logFilePath = SysUtil.GetTempPath("ShakeSocketController.log");
+                LogFilePath = SysUtil.GetTempPath(logFileName);
 
 #if DEBUG
-                _fs = new FileStream(logFilePath, FileMode.Create);
+                _fs = new FileStream(LogFilePath, FileMode.Create);
 #else
                 _fs = new FileStream(LogFilePath, FileMode.Append);
 #endif
-                _sw = new StreamWriterWithTimestamp(_fs);
-                _sw.AutoFlush = true;
+
+                _sw = new StreamWriterWithTimestamp(_fs)
+                {
+                    AutoFlush = true
+                };
+
                 Console.SetOut(_sw);
+
 #if !DEBUG
                 Console.SetError(_sw);
 #endif
 
                 return true;
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.WriteLine(e);
                 return false;
             }
         }
@@ -50,8 +56,9 @@ namespace ShakeSocketController.Controller
             try
             {
                 Console.WriteLine(o);
+
 #if DEBUG
-                if (!string.IsNullOrEmpty(logFilePath))
+                if (!string.IsNullOrEmpty(LogFilePath))
                     Console.Error.WriteLine(o);
 #endif
             }
@@ -76,10 +83,10 @@ namespace ShakeSocketController.Controller
             _sw?.Dispose();
             _fs?.Close();
             _fs?.Dispose();
-            if (!string.IsNullOrEmpty(logFilePath))
+            if (!string.IsNullOrEmpty(LogFilePath))
             {
-                File.Delete(logFilePath);
-                Init();
+                File.Delete(LogFilePath);
+                Init(LogFilePath);
             }
         }
 
@@ -124,9 +131,8 @@ namespace ShakeSocketController.Controller
         public static void LogUsefulException(Exception e)
         {
             // just log useful exceptions, not all of them
-            if (e is SocketException)
+            if (e is SocketException se)
             {
-                SocketException se = (SocketException)e;
                 if (se.SocketErrorCode == SocketError.ConnectionAborted)
                 {
                     // closed by browser when sending
@@ -156,12 +162,10 @@ namespace ShakeSocketController.Controller
             else if (e is ObjectDisposedException)
             {
             }
-            else if (e is Win32Exception)
+            else if (e is Win32Exception win32Ex)
             {
-                var ex = (Win32Exception)e;
-
                 // Win32Exception (0x80004005): A 32 bit processes cannot access modules of a 64 bit process.
-                if ((uint)ex.ErrorCode != 0x80004005)
+                if ((uint)win32Ex.ErrorCode != 0x80004005)
                 {
                     Info(e);
                 }
@@ -195,5 +199,4 @@ namespace ShakeSocketController.Controller
             base.Write(GetTimestamp() + value);
         }
     }
-
 }
