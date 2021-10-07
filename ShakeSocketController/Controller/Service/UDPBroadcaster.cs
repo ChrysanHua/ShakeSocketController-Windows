@@ -62,9 +62,9 @@ namespace ShakeSocketController.Controller.Service
         public void Reload()
         {
             if (broadcaster == null)
-                throw new Exception("UDPBroadcaster has been closed!");
+                throw new InvalidOperationException("UDPBroadcaster has been closed!");
             if (bcBuf == null)
-                throw new Exception("MsgData cannot be null!");
+                throw new ArgumentNullException(nameof(bcBuf));
 
             try
             {

@@ -59,9 +59,9 @@ namespace ShakeSocketController.Controller.Service
         public void BeginHandle(IPEndPoint localEP)
         {
             if (udpSocket == null)
-                throw new Exception("UDPHandler has been closed!");
+                throw new InvalidOperationException("UDPHandler has been closed!");
             if (localEP == null)
-                throw new Exception("LocalIPEndPoint cannot be null!");
+                throw new ArgumentNullException(nameof(localEP));
             
             try
             {
@@ -210,9 +210,9 @@ namespace ShakeSocketController.Controller.Service
         public void SendTo(byte[] dataBuf, IPEndPoint targetEP)
         {
             if (dataBuf == null)
-                throw new Exception("MsgData cannot be null!");
+                throw new ArgumentNullException(nameof(dataBuf));
             if (targetEP == null)
-                throw new Exception("TargetIPEndPoint cannot be null!");
+                throw new ArgumentNullException(nameof(targetEP));
 
             try
             {
