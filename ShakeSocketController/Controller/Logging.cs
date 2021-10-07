@@ -15,17 +15,24 @@ namespace ShakeSocketController.Controller
         private static StreamWriterWithTimestamp _sw;
 
         public static string LogFilePath { get; private set; }
+        public static bool IsLogToFile => (_fs != null && _sw != null);
 
+        /// <summary>
+        /// After Init, the log is output to a file
+        /// </summary>
         public static bool Init(string logFileName)
         {
-            if (!string.IsNullOrEmpty(LogFilePath))
-                throw new Exception("Logging has been initialized!");
-
+            if (string.IsNullOrWhiteSpace(logFileName))
+                throw new ArgumentNullException(nameof(logFileName));
+            if (IsLogToFile)
+                throw new InvalidOperationException("Logging has been initialized!");
+            
             try
             {
                 LogFilePath = SysUtil.GetTempPath(logFileName);
 
-#if DEBUG
+#if DEBUG       //in DEBUG mode, it is also output to the Console,
+                //and the logFile is cleared each run
                 _fs = new FileStream(LogFilePath, FileMode.Create);
 #else
                 _fs = new FileStream(LogFilePath, FileMode.Append);
@@ -47,18 +54,45 @@ namespace ShakeSocketController.Controller
             catch (Exception e)
             {
                 Console.WriteLine(e);
+                _sw?.Close();
+                _sw?.Dispose();
+                _sw = null;
+                _fs?.Close();
+                _fs?.Dispose();
+                _fs = null;
                 return false;
             }
         }
 
         private static void WriteToLogFile(object o)
         {
+            //write a line without the timestamp
+            try
+            {
+                Console.Write(o);
+                Console.Write(Environment.NewLine);
+
+#if DEBUG
+                if (IsLogToFile)
+                {
+                    Console.Error.Write(o);
+                    Console.Error.Write(Environment.NewLine);
+                }
+#endif
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }
+
+        private static void WriteLineToLogFile(object o)
+        {
             try
             {
                 Console.WriteLine(o);
 
 #if DEBUG
-                if (!string.IsNullOrEmpty(LogFilePath))
+                if (IsLogToFile)
                     Console.Error.WriteLine(o);
 #endif
             }
@@ -69,20 +103,30 @@ namespace ShakeSocketController.Controller
 
         public static void Error(object o)
         {
-            WriteToLogFile("[E] " + o);
+            WriteLineToLogFile("[E] " + o);
         }
 
         public static void Info(object o)
         {
-            WriteToLogFile(o);
+            WriteLineToLogFile(o);
+        }
+
+        public static void SplitLine(int len = 25, char symbol = '-')
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(symbol, len);
+            WriteToLogFile(sb.ToString());
         }
 
         public static void Clear()
         {
             _sw?.Close();
             _sw?.Dispose();
+            _sw = null;
             _fs?.Close();
             _fs?.Dispose();
+            _fs = null;
+
             if (!string.IsNullOrEmpty(LogFilePath))
             {
                 File.Delete(LogFilePath);
@@ -93,7 +137,7 @@ namespace ShakeSocketController.Controller
         [Conditional("DEBUG")]
         public static void Debug(object o)
         {
-            WriteToLogFile("[D] " + o);
+            WriteLineToLogFile("[D] " + o);
         }
 
         [Conditional("DEBUG")]
@@ -189,14 +233,10 @@ namespace ShakeSocketController.Controller
             return "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] ";
         }
 
+        //extend only the 'WriteLine' method
         public override void WriteLine(string value)
         {
             base.WriteLine(GetTimestamp() + value);
-        }
-
-        public override void Write(string value)
-        {
-            base.Write(GetTimestamp() + value);
         }
     }
 }
