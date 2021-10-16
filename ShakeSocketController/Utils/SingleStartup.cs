@@ -16,7 +16,7 @@ namespace ShakeSocketController.Utils
         /// <summary>
         /// 当前进程注册失败时发生（注意：要在调用Register()方法之前绑定才有效）
         /// </summary>
-        public static event EventHandler EndStartup;
+        public static event EventHandler FailToRegister;
         /// <summary>
         /// 当前应用程序出现多开时发生
         /// </summary>
@@ -75,7 +75,7 @@ namespace ShakeSocketController.Utils
                     //not the single one, give a signal to the running one
                     repeatAutoSignal.Set();
                     Unregister(false);
-                    EndStartup?.Invoke(null, EventArgs.Empty);
+                    FailToRegister?.Invoke(null, EventArgs.Empty);
                 }
             }
             catch (Exception ex)

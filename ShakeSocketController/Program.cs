@@ -1,4 +1,5 @@
 ﻿using ShakeSocketController.Controller;
+using ShakeSocketController.Utils;
 using ShakeSocketController.Views;
 using System;
 using System.Collections.Generic;
@@ -22,37 +23,36 @@ namespace ShakeSocketController
         [STAThread]
         static void Main()
         {
-            using (Mutex mutex = new Mutex(false, "Global\\ShakeSocketController"))
+            Application.ApplicationExit += Application_ApplicationExit;
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            string appTitle = SysUtil.GetAssemblyTitle();
+            if (!SingleStartup.Register($"Global\\{appTitle}_{SysUtil.GetAssemblyGUID(8)}"))
             {
-                Application.ApplicationExit += Application_ApplicationExit;
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-
-                if (!mutex.WaitOne(0, false))
-                {
-                    MessageBox.Show("ShakeSocketController已启动！");
-                    return;
-                }
-
-                Directory.SetCurrentDirectory(Application.StartupPath);
-
-                if (!Logging.Init("ShakeSocketController.log"))
-                {
-                    MessageBox.Show("日志模块初始化失败！");
-                    return;
-                }
-
-                MainController = new TransactionController();
-                MenuController = new MenuViewController(MainController);
-                MainController.Start();
-
-                Application.Run();
+                MessageBox.Show($"{appTitle}已启动！");
+                return;
             }
+
+            Directory.SetCurrentDirectory(Application.StartupPath);
+
+            if (!Logging.Init($"{appTitle}.log"))
+            {
+                MessageBox.Show("日志模块初始化失败！");
+                return;
+            }
+
+            MainController = new TransactionController();
+            MenuController = new MenuViewController(MainController);
+            MainController.Start();
+
+            Application.Run();
         }
 
         private static void Application_ApplicationExit(object sender, EventArgs e)
         {
             Application.ApplicationExit -= Application_ApplicationExit;
+            SingleStartup.Unregister();
             if (MainController != null)
             {
                 MainController.Stop();

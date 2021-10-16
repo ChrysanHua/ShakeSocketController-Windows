@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace ShakeSocketController.Utils
@@ -33,7 +34,7 @@ namespace ShakeSocketController.Utils
         {
             // Don't use Application.ExecutablePath
             // see https://stackoverflow.com/questions/12945805/odd-c-sharp-path-issue
-            return Assembly.GetEntryAssembly().Location;
+            return Assembly.GetExecutingAssembly().Location;
         }
 
         /// <summary>
@@ -70,14 +71,22 @@ namespace ShakeSocketController.Utils
         /// <returns>标题名字符串</returns>
         public static string GetAssemblyTitle()
         {
-            object[] attr = Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(AssemblyTitleAttribute), false);
-            if (attr.Length > 0)
-            {
-                AssemblyTitleAttribute title = (AssemblyTitleAttribute)attr[0];
-                if (!string.IsNullOrWhiteSpace(title.Title))
-                    return title.Title;
-            }
-            return string.Empty;
+            string title = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyTitleAttribute>()?.Title;
+            return string.IsNullOrWhiteSpace(title) ? string.Empty : title;
+        }
+
+        /// <summary>
+        /// 返回当前程序集标识的GUID字符串
+        /// </summary>
+        /// <param name="lastLen">指示要返回GUID字符串的末几位（默认36，即全部）</param>
+        /// <returns>GUID字符串</returns>
+        public static string GetAssemblyGUID(int lastLen = 36)
+        {
+            string guid = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<GuidAttribute>()?.Value;
+            return string.IsNullOrWhiteSpace(guid) ? string.Empty
+                : guid.Substring(guid.Length - lastLen);
         }
 
         /// <summary>
