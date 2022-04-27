@@ -141,7 +141,7 @@ namespace ShakeSocketController.Controller
         public void CheckInDevice(IPAddress targetIP, DeviceInfo targetInfo)
         {
             deviceDictionary[targetIP] = targetInfo;
-            Logging.Debug($"IP check in: {targetIP} ({targetInfo.DeviceName})");
+            Logging.Debug($"IP check in: {targetIP} ({targetInfo.OldDevName})");
             DeviceListChanged?.Invoke(this, new EventArgs());
         }
 

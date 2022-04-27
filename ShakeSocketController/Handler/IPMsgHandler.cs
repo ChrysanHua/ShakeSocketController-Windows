@@ -21,7 +21,7 @@ namespace ShakeSocketController.Handler
                 IPAddress targetIP = state as IPAddress;
                 if (targetIP == null) return;
                 DeviceInfo targetInfo = StrUtil.JsonToObject<DeviceInfo>(dataStr);
-                if (!targetInfo.IsComplete()) return;
+                if (!targetInfo.IsUsable()) return;
                 controller.CheckInDevice(targetIP, targetInfo);
             }
             catch (Exception e)
