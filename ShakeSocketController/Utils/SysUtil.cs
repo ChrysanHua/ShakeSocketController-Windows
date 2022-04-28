@@ -166,5 +166,14 @@ namespace ShakeSocketController.Utils
             }
         }
 
+        /// <summary>
+        /// 生成一个新的UUID（GUID）
+        /// </summary>
+        /// <returns>返回UUID字符串</returns>
+        public static string GenerateUUID()
+        {
+            return Guid.NewGuid().ToString();
+        }
+
     }
 }

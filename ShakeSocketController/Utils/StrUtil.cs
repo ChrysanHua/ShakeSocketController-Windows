@@ -189,5 +189,11 @@ namespace ShakeSocketController.Utils
         {
             writer.WriteValue(value.ToString());
         }
+
+        /* PS：在这里记录一个发现Newtonsoft.Json比较狗的（对比Gson）反序列化情况↓
+         *   默认情况下，像readonly字段、带有非公共set的属性等这种“只读”的元素，在序列化时会被加入到Json字符串中，
+         * 但在反序列化的时候，它们会被无视！被忽略！
+         * 除非反序列所用的构造函数包含该元素对应的参数，或者在该元素上显式添加[JsonProperty]注解......无语...
+         */
     }
 }

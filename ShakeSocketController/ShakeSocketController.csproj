@@ -71,9 +71,10 @@
     <Compile Include="Model\AbnormalDataEventArgs.cs" />
     <Compile Include="Model\AnsData.cs" />
     <Compile Include="Model\CmdData.cs" />
-    <Compile Include="Model\Configuration.cs" />
+    <Compile Include="Model\AppConfig.cs" />
     <Compile Include="Model\DeviceInfo.cs" />
     <Compile Include="Model\HandleUDPEventArgs.cs" />
+    <Compile Include="Model\LocalInfo.cs" />
     <Compile Include="Model\MsgPacket.cs" />
     <Compile Include="Model\SocketAsyncState.cs" />
     <Compile Include="Program.cs" />

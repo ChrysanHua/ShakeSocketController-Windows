@@ -61,7 +61,7 @@ namespace ShakeSocketController.Views
         {
             int index = lbDeviceList.SelectedIndex;
             tbNickName.Text = curDeviceList[index].NickName;
-            tbDeviceName.Text = curDeviceList[index].OldDevName;
+            tbDeviceName.Text = curDeviceList[index].DeviceName;
             tbIP.Text = curDeviceList[index].IP.ToString();
         }
     }

@@ -31,8 +31,6 @@ namespace ShakeSocketController.Model
         public bool HadConnected =>
             !string.IsNullOrWhiteSpace(ShakeMark);      //曾经是否有连接过
 
-        public string OldDevName;//临时代码
-
 
         public DeviceInfo() : this(string.Empty, UNKNOWN_DEVICE_NAME, UNKNOWN_USER_NAME) { }
 

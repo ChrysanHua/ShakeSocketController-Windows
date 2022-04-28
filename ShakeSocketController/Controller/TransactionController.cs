@@ -22,7 +22,7 @@ namespace ShakeSocketController.Controller
         private UDPBroadcaster broadcaster;
         private UDPHandler udpHandler;
         private TCPHandler tcpHandler;
-        private Configuration config;
+        private AppConfig config;
 
         public event EventHandler DeviceListChanged;
         public event EventHandler BroadcastStatusChanged;
@@ -33,7 +33,7 @@ namespace ShakeSocketController.Controller
 
         public bool GetIsBCStop() => broadcaster.IsBCStop;
 
-        public Configuration GetCurrentConfig() => config;
+        public AppConfig GetCurrentConfig() => config;
 
         public ICollection<DeviceInfo> GetCurrentDeviceList() => deviceDictionary.Values;
 
@@ -49,10 +49,10 @@ namespace ShakeSocketController.Controller
         public void Start()
         {
             deviceDictionary.Clear();
-            config = Configuration.Load();
+            config = AppConfig.Load();
             udpHandler.BeginHandle(new IPEndPoint(SysUtil.GetLocalIP(), MSG_PORT));
             StartBroadcast(true);
-            
+
         }
 
         public void Stop()
@@ -105,18 +105,15 @@ namespace ShakeSocketController.Controller
         {
             if (firstTime)
             {
-                DeviceInfo localInfo = config.GetLocalInfo();
-                if (localInfo != null)
+                try
                 {
-                    try
-                    {
-                        string jsonStr = StrUtil.ObjectToJson(localInfo);
-                        StartBroadcast(MsgPacket.Parse(MsgPacket.TYPE_IP, jsonStr));
-                    }
-                    catch (Exception e)
-                    {
-                        Logging.Error(e);
-                    }
+                    LocalInfo localInfo = config.GetLocalInfo();
+                    string jsonStr = localInfo.BCJson;
+                    StartBroadcast(MsgPacket.Parse(MsgPacket.TYPE_IP, jsonStr));
+                }
+                catch (Exception e)
+                {
+                    Logging.Error(e);
                 }
             }
             else
@@ -141,7 +138,7 @@ namespace ShakeSocketController.Controller
         public void CheckInDevice(IPAddress targetIP, DeviceInfo targetInfo)
         {
             deviceDictionary[targetIP] = targetInfo;
-            Logging.Debug($"IP check in: {targetIP} ({targetInfo.OldDevName})");
+            Logging.Debug($"IP check in: {targetIP} ({targetInfo.DeviceName})");
             DeviceListChanged?.Invoke(this, new EventArgs());
         }
 
