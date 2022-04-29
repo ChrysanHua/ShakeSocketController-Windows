@@ -20,6 +20,8 @@ namespace ShakeSocketController.Model
         public readonly string UUID;                    //本设备唯一标识符
         public string NickName;                         //昵称（默认与用户名相同，可自定义修改）
 
+        public int BcPort;                              //广播端口号
+        public int MsgPort;                             //消息端口号
 
         [JsonIgnore]
         public readonly string DeviceName;              //本机设备名
@@ -40,6 +42,9 @@ namespace ShakeSocketController.Model
             DeviceName = SysUtil.GetDeviceName();
             UserName = SysUtil.GetWinUserName();
             NickName = UserName;
+
+            BcPort = 19019;
+            MsgPort = 10019;
         }
 
         /// <summary>

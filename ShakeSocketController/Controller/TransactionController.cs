@@ -1,17 +1,16 @@
 ﻿using ShakeSocketController.Controller.Service;
-using ShakeSocketController.Handler;
 using ShakeSocketController.Model;
 using ShakeSocketController.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ShakeSocketController.Controller
 {
+    /// <summary>
+    /// 全局控制器类
+    /// </summary>
     public class TransactionController
     {
         private const int BC_PORT = 19019;
