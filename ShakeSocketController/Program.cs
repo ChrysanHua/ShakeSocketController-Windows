@@ -52,7 +52,7 @@ namespace ShakeSocketController
             //initialize and start
             MainController = new TransactionController();
             MenuController = new MenuViewController(MainController);
-            MainController.Start();
+            MainController.Run();
 
             Application.Run();
         }
@@ -69,7 +69,7 @@ namespace ShakeSocketController
             //stop the controller (if need)
             if (MainController != null)
             {
-                MainController.Stop();
+                MainController.Exit();
                 MainController = null;
             }
         }

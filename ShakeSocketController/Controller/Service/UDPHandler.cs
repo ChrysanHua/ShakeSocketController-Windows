@@ -77,7 +77,7 @@ namespace ShakeSocketController.Controller.Service
                     ByteUtil.ClearByte(recBuf);
                 }
 
-                Logging.Debug("begin handling UDP!");
+                Logging.Debug("Begin handling UDP!");
                 //set as handle signal
                 handleManualSignal.Set();
 
@@ -106,7 +106,7 @@ namespace ShakeSocketController.Controller.Service
         {
             if (IsRecStop || !IsHandling) return;
             handleManualSignal.Reset();
-            Logging.Debug("end handling UDP!");
+            Logging.Debug("End handling UDP!");
         }
 
         private void Close(bool absolutely)
@@ -143,7 +143,7 @@ namespace ShakeSocketController.Controller.Service
             if (udpSocket == null)
             {
                 //the socket has been closed
-                Logging.Debug("end UDPReceive!");
+                Logging.Debug("End UDPReceive!");
                 return;
             }
 
@@ -193,7 +193,7 @@ namespace ShakeSocketController.Controller.Service
                 if ((e is ObjectDisposedException) || (e is NullReferenceException))
                 {
                     //this is caused by the socket being closed
-                    Logging.Debug("end UDPReceive!");
+                    Logging.Debug("End UDPReceive!");
                     return;
                 }
                 else

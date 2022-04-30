@@ -136,7 +136,7 @@ namespace ShakeSocketController.Controller.Service
                 {
                     //get the endBC signal, stop broadcasting and flag stop status
                     IsBCStop = true;
-                    Logging.Debug("end broadcast!");
+                    Logging.Debug("End broadcast!");
                 }
                 else
                 {

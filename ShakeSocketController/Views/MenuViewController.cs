@@ -41,7 +41,7 @@ namespace ShakeSocketController.Views
             deviceListForm.Dispose();
             deviceListForm = null;
 
-            _controller.Stop();
+            _controller.Exit();
             Application.Exit();
         }
     }

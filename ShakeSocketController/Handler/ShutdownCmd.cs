@@ -29,7 +29,7 @@ namespace ShakeSocketController.Handler
                 Respond(controller, state);
                 Logging.Info("Handle 远程关机");
                 //notice controller
-                controller.Stop();
+                controller.Exit();
                 //shutdown computer
                 Process process = new Process();
                 process.StartInfo.FileName = "shutdown.exe";

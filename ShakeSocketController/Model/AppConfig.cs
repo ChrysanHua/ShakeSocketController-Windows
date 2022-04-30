@@ -21,7 +21,13 @@ namespace ShakeSocketController.Model
         public string NickName;                         //昵称（默认与用户名相同，可自定义修改）
 
         public int BcPort;                              //广播端口号
+        public int BcInterval;                          //每次广播的间隔时间（毫秒）
         public int MsgPort;                             //消息端口号
+        public int MsgMaxReceiveBufSize;                //接收消息数据包的Buf大小
+
+        public bool AllowCtrlOperation;                 //允许Ctrl控制
+        public bool IsSSCEnabled;                       //SSC启用状态
+        public bool IsBCEnabled;                        //广播启用状态
 
         [JsonIgnore]
         public readonly string DeviceName;              //本机设备名
@@ -44,7 +50,13 @@ namespace ShakeSocketController.Model
             NickName = UserName;
 
             BcPort = 19019;
+            BcInterval = 3000;
             MsgPort = 10019;
+            MsgMaxReceiveBufSize = 4096;
+
+            AllowCtrlOperation = true;
+            IsSSCEnabled = true;
+            IsBCEnabled = true;
         }
 
         /// <summary>
@@ -77,7 +89,7 @@ namespace ShakeSocketController.Model
             {
                 config = new AppConfig();
                 Save(config);
-                Logging.Info("init AppConfig.");
+                Logging.Info("Init AppConfig.");
             }
 
             return config;
@@ -101,6 +113,20 @@ namespace ShakeSocketController.Model
         public static bool CheckConfig(AppConfig config)
         {
             // TODO: 完善这里的配置检查代码
+            if (string.IsNullOrWhiteSpace(config.UUID) || config.UUID.Length != 36
+                || string.IsNullOrWhiteSpace(config.NickName))
+                return false;
+            if (config.BcPort <= 0 || config.BcPort > 65535)
+                return false;
+            if (config.MsgPort <= 0 || config.MsgPort > 65535)
+                return false;
+            if (config.BcInterval < 0)
+                return false;
+            if (config.MsgMaxReceiveBufSize < 1024 || config.MsgMaxReceiveBufSize > 65536)
+                return false;
+            if (config.IsBCEnabled && !config.IsSSCEnabled)
+                return false;
+
             return true;
         }
 
