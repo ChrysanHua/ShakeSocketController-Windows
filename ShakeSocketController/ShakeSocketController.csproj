@@ -12,6 +12,21 @@
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -100,6 +115,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="Views\DeviceListForm.resx">
       <DependentUpon>DeviceListForm.cs</DependentUpon>
@@ -120,6 +136,54 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.6.2">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4.6.2 %28x86 和 x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
   <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\CtrlOFF64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlOFF96.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlOFF128.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_All64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_All96.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_All128.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_Listen64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_Listen96.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON_Listen128.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON64.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON96.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\CtrlON128.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
