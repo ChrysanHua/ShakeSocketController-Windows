@@ -21,16 +21,28 @@ namespace ShakeSocketController.Controller
         private UDPHandler udpHandler;                      //UDP消息Handler
         private TCPHandler tcpHandler;
 
+        /// <summary>
+        /// SSC控制状态变更事件
+        /// </summary>
+        public event EventHandler SSCStateChanged;
         public event EventHandler DeviceListChanged;
-        public event EventHandler BroadcastStatusChanged;
         public event EventHandler TCPConnecting;
         public event EventHandler TCPConnected;
         public event EventHandler TCPDisConnect;
 
 
-        public bool GetIsBCStop() => broadcaster.IsBCStop;
-
-        public AppConfig GetCurrentConfig() => config;
+        /// <summary>
+        /// 当前程序配置
+        /// </summary>
+        public AppConfig CurConfig => config;
+        /// <summary>
+        /// 广播状态
+        /// </summary>
+        public bool IsBCStop => broadcaster.IsBCStop;
+        /// <summary>
+        /// SSC监听状态
+        /// </summary>
+        public bool IsSSCListening => !udpHandler.IsRecStop && udpHandler.IsHandling;
 
         public ICollection<DeviceInfo> GetCurrentDeviceList() => deviceDictionary.Values;
 
@@ -48,7 +60,7 @@ namespace ShakeSocketController.Controller
             udpHandler = new UDPHandler(config.MsgMaxReceiveBufSize);
             udpHandler.HandleUDPReceived += UdpHandler_HandleUDPReceived;
             // TODO: 订阅处理UDPHandler另外4个事件
-            Logging.SplitLine();
+
             Logging.Info($"{TAG}({SysUtil.GetVersionStr(4)}) init OK.");
         }
 
@@ -71,8 +83,8 @@ namespace ShakeSocketController.Controller
         /// </summary>
         public void Exit()
         {
-            broadcaster.Close();
-            udpHandler.Close();
+            broadcaster?.Close();
+            udpHandler?.Close();
             StopTCPHandler();
 
         }
@@ -82,11 +94,12 @@ namespace ShakeSocketController.Controller
         /// </summary>
         public void StartSSC()
         {
-            // TODO: 全局状态在任务栏的菜单选项：【禁用、仅监听、监听&广播】、允许控制
             //无论如何，重新启动UDP消息Handler
             udpHandler.BeginHandle(new IPEndPoint(SysUtil.GetLocalIP(), config.MsgPort));
             //根据程序配置切换广播状态
             ToggleBCState(config.IsBCEnabled);
+            //触发事件
+            SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -96,6 +109,8 @@ namespace ShakeSocketController.Controller
         {
             udpHandler.EndHandle();
             ToggleBCState(false);
+            //触发事件
+            SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -111,10 +126,32 @@ namespace ShakeSocketController.Controller
             {
                 //无法从本地加载配置，这是十分致命的异常，必须告知用户
                 Logging.Error(e);
-                // TODO: 告知用户APP配置加载异常
                 //返回默认值配置，这只是保持程序正常运行的备用方案
-                return new AppConfig();
+                return AppConfig.GetDefaultConfig(true);
             }
+        }
+
+        /// <summary>
+        /// 保存程序配置到本地
+        /// </summary>
+        /// <param name="config">要保存的程序配置，传入null等效于清空原文件</param>
+        /// <returns>返回保存是否成功，如果配置无效将直接返回false而不执行任何保存操作</returns>
+        public bool SaveConfig(AppConfig config)
+        {
+            if (config == null || AppConfig.CheckConfig(config))
+            {
+                try
+                {
+                    AppConfig.Save(config);
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Logging.Error(e);
+                }
+            }
+
+            return false;
         }
 
         public void ToggleBCState(bool enabled)
@@ -188,11 +225,15 @@ namespace ShakeSocketController.Controller
 
         public bool ShouldHandleMsg(IPAddress targetIP, DeviceInfo targetInfo = null)
         {
+            // TODO: 这个判断逻辑要大改：先判断IP有没有记录，
+            //  有记录：恰好是已连接的那个设备，则直接处理；否则，按下面“无记录”走↓；
+            //  无记录：检查数据内容类型，如果是连接类型，未连接，则执行连接逻辑*，已连接的则直接忽略；
+            //      如果是Ctrl类型，已连接，则请求确认身份*，未连接的则直接忽略；
             if (targetInfo != null)
             {
                 return targetInfo.Equals(CheckOutDevice(targetIP));
             }
-            else if (GetIsBCStop())
+            else if (IsBCStop)
             {
                 return deviceDictionary.ContainsKey(targetIP);
             }

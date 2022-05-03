@@ -73,7 +73,7 @@ namespace ShakeSocketController.Utils.Tests
         [TestMethod()]
         public void ConfigTest()
         {
-            AppConfig config1 = new AppConfig();
+            AppConfig config1 = AppConfig.GetDefaultConfig();
             string json = StrUtil.ObjectToJson(config1);
             Console.WriteLine(json);
             AppConfig config2 = StrUtil.JsonToObject<AppConfig>(json);

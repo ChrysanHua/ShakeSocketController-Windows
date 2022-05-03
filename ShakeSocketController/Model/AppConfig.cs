@@ -30,6 +30,10 @@ namespace ShakeSocketController.Model
         public bool IsBCEnabled;                        //广播启用状态
 
         [JsonIgnore]
+        public bool IsDefault;                          //默认配置标志
+        [JsonIgnore]
+        public bool HadLoadFailed;                      //本地配置加载失败标志
+        [JsonIgnore]
         public readonly string DeviceName;              //本机设备名
         [JsonIgnore]
         public readonly string UserName;                //本机当前登录的用户名
@@ -37,11 +41,8 @@ namespace ShakeSocketController.Model
         private LocalInfo localInfo;                    //本机设备信息对象
 
 
-        /// <summary>
-        /// 不要直接使用此构造函数，使用load()方法加载配置！
-        /// </summary>
         [JsonConstructor]
-        public AppConfig()
+        private AppConfig()
         {
             //在此设定默认值
             UUID = Guid.NewGuid().ToString();
@@ -57,6 +58,23 @@ namespace ShakeSocketController.Model
             AllowCtrlOperation = true;
             IsSSCEnabled = true;
             IsBCEnabled = true;
+
+            IsDefault = false;
+            HadLoadFailed = false;
+        }
+
+        /// <summary>
+        /// 首次获取初始配置时不要直接使用此方法，使用load()方法加载配置！
+        /// </summary>
+        /// <param name="loadFailed">表示是否因为加载本地配置失败才调用该方法</param>
+        /// <returns>返回默认配置对象</returns>
+        public static AppConfig GetDefaultConfig(bool loadFailed = false)
+        {
+            return new AppConfig()
+            {
+                IsDefault = true,
+                HadLoadFailed = loadFailed,
+            };
         }
 
         /// <summary>
@@ -87,7 +105,7 @@ namespace ShakeSocketController.Model
 
             if (config == null)
             {
-                config = new AppConfig();
+                config = GetDefaultConfig();
                 Save(config);
                 Logging.Info("Init AppConfig.");
             }

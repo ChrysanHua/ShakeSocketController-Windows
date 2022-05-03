@@ -35,7 +35,7 @@ namespace ShakeSocketController.Utils.Tests
         [TestMethod()]
         public void LocalInfoTest()
         {
-            AppConfig config = new AppConfig();
+            AppConfig config = AppConfig.GetDefaultConfig();
             string json = StrUtil.ObjectToJson(config);
             LocalInfo localInfo = config.GetLocalInfo();
             string bcJson = localInfo.BCJson;

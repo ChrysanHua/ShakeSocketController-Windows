@@ -14,7 +14,7 @@ namespace ShakeSocketController
         /// </summary>
         public static TransactionController MainController { get; private set; }
         /// <summary>
-        /// 任务栏菜单控制器
+        /// 任务栏图标菜单控制器
         /// </summary>
         public static MenuViewController MenuController { get; private set; }
 
@@ -62,7 +62,7 @@ namespace ShakeSocketController
         /// </summary>
         private static void Application_ApplicationExit(object sender, EventArgs e)
         {
-            //in any case, unsubscribe first
+            //in any case, unsubscribe the static event handlers first
             Application.ApplicationExit -= Application_ApplicationExit;
             //unregister single instance startup
             SingleStartup.Unregister();
@@ -71,6 +71,8 @@ namespace ShakeSocketController
             {
                 MainController.Exit();
                 MainController = null;
+                Logging.Info("ShakeSocketController stopped.");
+                Logging.SplitLine();
             }
         }
     }
