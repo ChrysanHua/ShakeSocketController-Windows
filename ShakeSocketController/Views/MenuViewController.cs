@@ -320,7 +320,7 @@ namespace ShakeSocketController.Views
             if (!AutoStartup.Toggle(autoStartupItem.Checked))
             {
                 //切换失败，通知用户
-                MessageBox.Show("注册表修改失败！", "开机启动状态切换失败",
+                MessageBox.Show("注册表修改失败！", "SSC开机启动状态切换失败",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
             //更新实际状态
@@ -334,8 +334,8 @@ namespace ShakeSocketController.Views
         {
             if (File.Exists(AppConfig.CONFIG_FILE_NAME))
             {
-                //文件存在，目前仅实现直接打开
-                Process.Start(AppConfig.CONFIG_FILE_NAME);
+                //文件存在，目前仅实现打开资源管理器
+                Process.Start("explorer.exe", @"/select, " + AppConfig.CONFIG_FILE_NAME);
             }
             else
             {
@@ -350,8 +350,8 @@ namespace ShakeSocketController.Views
         {
             if (File.Exists(Logging.LogFilePath))
             {
-                //文件存在，目前仅实现直接打开
-                Process.Start(Logging.LogFilePath);
+                //文件存在，目前仅实现打开资源管理器
+                Process.Start("explorer.exe", @"/select, " + Logging.LogFilePath);
             }
             else
             {

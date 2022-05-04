@@ -32,7 +32,7 @@ namespace ShakeSocketController
 
             string appTitle = SysUtil.GetAssemblyTitle();
             //register single instance startup
-            if (!SingleStartup.Register($"Global\\{appTitle}_{SysUtil.GetAssemblyGUID(8)}"))
+            if (!SingleStartup.Register($"Global\\{appTitle}_{SysUtil.GetAssemblyGUID()}"))
             {
                 //the app has been started
                 MessageBox.Show($"{appTitle}已启动！");
