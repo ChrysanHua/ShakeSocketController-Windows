@@ -110,7 +110,7 @@ namespace ShakeSocketController.Utils
 
         private static void BGListenWork(object paraObj)
         {
-            Logging.Debug("SingleStartup's listenThread started");
+            Logging.Debug("SingleStartup's listenThread started.");
 
             try
             {
@@ -134,7 +134,7 @@ namespace ShakeSocketController.Utils
             {
                 //in any case, take the initiative to dispose at the end of the listenThread
                 Unregister(false);
-                Logging.Debug("SingleStartup's listenThread stopped");
+                Logging.Debug("SingleStartup's listenThread stopped.");
             }
         }
     }

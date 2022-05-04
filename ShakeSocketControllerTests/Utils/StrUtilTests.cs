@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using ShakeSocketController.Controller;
 using ShakeSocketController.Model;
 using ShakeSocketController.Utils;
 using System;
@@ -84,6 +85,26 @@ namespace ShakeSocketController.Utils.Tests
         public void AddressTest()
         {
             Console.WriteLine(SysUtil.GetLocalIP());
+        }
+
+        [TestMethod()]
+        public void LoggingSplitLineTest()
+        {
+            string s = SysUtil.GetAssemblyTitle();
+            Logging.SplitLine();
+            Logging.SplitLine(null);
+            Logging.SplitLine("");
+            Logging.SplitLine("    ");
+            Logging.SplitLine(s);
+            Logging.SplitLine(s, 0);
+            Logging.SplitLine(s, 1);
+            Logging.SplitLine(s, s.Length);
+            Logging.SplitLine(s, s.Length + 1);
+            Logging.SplitLine(s, s.Length + 2);
+            Logging.SplitLine(s, s.Length + 3);
+            Logging.SplitLine(null, 36);
+            Logging.SplitLine(null, 36, '=');
+            Logging.SplitLine(s, 36, '=');
         }
     }
 }

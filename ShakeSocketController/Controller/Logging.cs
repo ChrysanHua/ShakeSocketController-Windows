@@ -15,7 +15,7 @@ namespace ShakeSocketController.Controller
         private static StreamWriterWithTimestamp _sw;
 
         public static string LogFilePath { get; private set; }
-        public static bool IsLogToFile => (_fs != null && _sw != null);
+        public static bool IsLogToFile { get; private set; }
 
         /// <summary>
         /// After Init, the log is output to a file
@@ -26,7 +26,7 @@ namespace ShakeSocketController.Controller
                 throw new ArgumentNullException(nameof(logFileName));
             if (IsLogToFile)
                 throw new InvalidOperationException("Logging has been initialized!");
-            
+
             try
             {
                 LogFilePath = SysUtil.GetTempPath(logFileName);
@@ -49,6 +49,7 @@ namespace ShakeSocketController.Controller
                 Console.SetError(_sw);
 #endif
 
+                IsLogToFile = true;
                 return true;
             }
             catch (Exception e)
@@ -106,14 +107,29 @@ namespace ShakeSocketController.Controller
             WriteLineToLogFile("[E] " + o);
         }
 
+        public static void Warn(object o)
+        {
+            WriteLineToLogFile("[W] " + o);
+        }
+
         public static void Info(object o)
         {
             WriteLineToLogFile(o);
         }
 
-        public static void SplitLine(int len = 25, char symbol = '-')
+        public static void SplitLine(string midStr = null, int len = 25, char symbol = '-')
         {
+            //writeLine without the timestamp
             StringBuilder sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(midStr))
+            {
+                len = Math.Max(midStr.Length, len);
+                int symbolLen = len - midStr.Length;
+                int frontSymbolLen = (symbolLen == 1) ? 1 : (symbolLen / 2);
+                sb.Append(symbol, frontSymbolLen);
+                sb.Append(midStr);
+                len -= sb.Length;
+            }
             sb.Append(symbol, len);
             WriteToLogFile(sb.ToString());
         }
@@ -126,12 +142,19 @@ namespace ShakeSocketController.Controller
             _fs?.Close();
             _fs?.Dispose();
             _fs = null;
+            IsLogToFile = false;
 
             if (!string.IsNullOrEmpty(LogFilePath))
             {
                 File.Delete(LogFilePath);
                 Init(LogFilePath);
             }
+        }
+
+        [Conditional("DEBUG")]
+        public static void Verbose(object o)
+        {
+            WriteLineToLogFile("[V] " + o);
         }
 
         [Conditional("DEBUG")]
@@ -154,7 +177,8 @@ namespace ShakeSocketController.Controller
         }
 
         [Conditional("DEBUG")]
-        public static void Debug(EndPoint local, EndPoint remote, int len, string header = null, string tailer = null)
+        public static void Debug(EndPoint local, EndPoint remote, int len,
+            string header = null, string tailer = null)
         {
             if (header == null && tailer == null)
                 Debug($"{local} => {remote} (size={len})");
