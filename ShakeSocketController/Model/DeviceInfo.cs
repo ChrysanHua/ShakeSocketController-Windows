@@ -23,6 +23,7 @@ namespace ShakeSocketController.Model
         public string ClientVersion;                    //手机客户端的版本号
 
         public bool IsAutoConnect;                      //是否自动连接
+        public bool IsDisabled;                         //是否禁用
 
         [JsonIgnore]
         public bool IsConnected;                        //当前是否已连接

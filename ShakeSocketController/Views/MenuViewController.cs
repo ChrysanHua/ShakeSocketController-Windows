@@ -63,7 +63,7 @@ namespace ShakeSocketController.Views
             if (_controller.CurConfig.IsDefault)
             {
                 //首次运行，显示配置连接窗口
-                //ShowDeviceListForm();
+                ShowDeviceListForm();
             }
         }
 
@@ -389,13 +389,16 @@ namespace ShakeSocketController.Views
             //只处理鼠标左键双击
             if (e.Button == MouseButtons.Left)
             {
-                // TODO: 显示配置连接窗口
-                //ShowDeviceListForm();
+                //显示配置连接窗口
+                ShowDeviceListForm();
             }
         }
 
         #endregion
 
+        /// <summary>
+        /// 显示配置连接窗口
+        /// </summary>
         private void ShowDeviceListForm()
         {
             if (deviceListForm != null)
@@ -411,13 +414,22 @@ namespace ShakeSocketController.Views
             }
         }
 
-        private void DeviceListForm_FormClosed(object sender, System.Windows.Forms.FormClosedEventArgs e)
+        /// <summary>
+        /// 配置连接窗口关闭事件
+        /// </summary>
+        private void DeviceListForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             deviceListForm.Dispose();
             deviceListForm = null;
 
-            _controller.Exit();
-            Application.Exit();
+            if (_controller.CurConfig.IsDefault && e.CloseReason == CloseReason.UserClosing)
+            {
+                //首次运行，弹出通知来提示用户任务栏图标的存在
+                ShowBalloonTip("您可以通过右键菜单控制SSC，或双击左键来重新打开配置连接窗口。"
+                    , $"{SysUtil.GetAssemblyTitle()}在这里");
+                //重置标志
+                _controller.CurConfig.IsDefault = false;
+            }
         }
     }
 }
