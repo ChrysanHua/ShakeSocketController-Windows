@@ -13,9 +13,10 @@ namespace ShakeSocketController.Controller
     {
         private static FileStream _fs;
         private static StreamWriterWithTimestamp _sw;
+        private static volatile bool _isLogToFile;
 
         public static string LogFilePath { get; private set; }
-        public static bool IsLogToFile { get; private set; }
+        public static bool IsLogToFile => _isLogToFile;
 
         /// <summary>
         /// After Init, the log is output to a file
@@ -24,7 +25,7 @@ namespace ShakeSocketController.Controller
         {
             if (string.IsNullOrWhiteSpace(logFileName))
                 throw new ArgumentNullException(nameof(logFileName));
-            if (IsLogToFile)
+            if (_fs != null || _sw != null)
                 throw new InvalidOperationException("Logging has been initialized!");
 
             try
@@ -49,7 +50,7 @@ namespace ShakeSocketController.Controller
                 Console.SetError(_sw);
 #endif
 
-                IsLogToFile = true;
+                _isLogToFile = true;
                 return true;
             }
             catch (Exception e)
@@ -70,15 +71,22 @@ namespace ShakeSocketController.Controller
             //write a line without the timestamp
             try
             {
-                Console.Write(o);
-                Console.Write(Environment.NewLine);
-
-#if DEBUG
+#if DEBUG       //redundant code, same as the "WriteLineToLogFile" method
                 if (IsLogToFile)
                 {
+                    Console.Write(o);
+                    Console.Write(Environment.NewLine);
                     Console.Error.Write(o);
                     Console.Error.Write(Environment.NewLine);
                 }
+                else
+                {
+                    Console.Write(o);
+                    Console.Write(Environment.NewLine);
+                }
+#else
+                Console.Write(o);
+                Console.Write(Environment.NewLine);
 #endif
             }
             catch (ObjectDisposedException)
@@ -90,11 +98,18 @@ namespace ShakeSocketController.Controller
         {
             try
             {
-                Console.WriteLine(o);
-
-#if DEBUG
+#if DEBUG       //redundant code, in order to avoid repeated output in extreme cases
                 if (IsLogToFile)
-                    Console.Error.WriteLine(o);
+                {
+                    Console.WriteLine(o);       //to File
+                    Console.Error.WriteLine(o); //to Console
+                }
+                else
+                {
+                    Console.WriteLine(o);       //to Console(or File, in extreme cases) only
+                }
+#else
+                Console.WriteLine(o);
 #endif
             }
             catch (ObjectDisposedException)
@@ -142,7 +157,6 @@ namespace ShakeSocketController.Controller
             _fs?.Close();
             _fs?.Dispose();
             _fs = null;
-            IsLogToFile = false;
 
             if (!string.IsNullOrEmpty(LogFilePath))
             {
