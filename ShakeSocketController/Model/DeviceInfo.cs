@@ -32,6 +32,10 @@ namespace ShakeSocketController.Model
         public bool HadConnected =>
             !string.IsNullOrWhiteSpace(ShakeMark);      //曾经是否有连接过
 
+        [JsonIgnore]
+        public string FriendlyName =>                   //友好名称
+            IsConnected ? $"（已连接）{NickName}" : NickName;
+
 
         public DeviceInfo() : this(string.Empty, UNKNOWN_DEVICE_NAME, UNKNOWN_USER_NAME) { }
 

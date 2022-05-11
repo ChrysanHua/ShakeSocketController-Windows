@@ -85,6 +85,9 @@ namespace ShakeSocketController.Utils.Tests
         public void AddressTest()
         {
             Console.WriteLine(SysUtil.GetLocalIP());
+            IPAddress address1 = SysUtil.GetLocalIP();
+            IPAddress address2 = SysUtil.GetLocalIP();
+            Assert.AreEqual(address1, address2);
         }
 
         [TestMethod()]

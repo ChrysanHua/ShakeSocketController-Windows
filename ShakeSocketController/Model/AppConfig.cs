@@ -2,6 +2,7 @@
 using ShakeSocketController.Controller;
 using ShakeSocketController.Utils;
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace ShakeSocketController.Model
@@ -28,6 +29,8 @@ namespace ShakeSocketController.Model
         public bool AllowCtrlOperation;                 //允许Ctrl控制
         public bool IsSSCEnabled;                       //SSC启用状态
         public bool IsBCEnabled;                        //广播启用状态
+
+        public List<DeviceInfo> historyList;            //设备连接历史列表
 
         [JsonIgnore]
         public bool IsDefault;                          //默认配置标志
@@ -58,6 +61,8 @@ namespace ShakeSocketController.Model
             AllowCtrlOperation = true;
             IsSSCEnabled = true;
             IsBCEnabled = true;
+
+            historyList = new List<DeviceInfo>();
 
             IsDefault = false;
             HadLoadFailed = false;
@@ -143,6 +148,8 @@ namespace ShakeSocketController.Model
             if (config.MsgMaxReceiveBufSize < 1024 || config.MsgMaxReceiveBufSize > 65536)
                 return false;
             if (config.IsBCEnabled && !config.IsSSCEnabled)
+                return false;
+            if (config.historyList == null)
                 return false;
 
             return true;

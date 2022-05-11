@@ -2,8 +2,8 @@
 using ShakeSocketController.Model;
 using ShakeSocketController.Utils;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 
 namespace ShakeSocketController.Controller
@@ -15,7 +15,8 @@ namespace ShakeSocketController.Controller
     {
         private const string TAG = "ShakeSocketController";
 
-        private readonly ConcurrentDictionary<IPAddress, DeviceInfo> deviceDictionary;  //设备列表字典
+        private readonly SynchronizedCollection<DeviceInfo> deviceInfoList; //设备连接列表
+        private volatile DeviceInfo ctrlDeviceInfo;         //当前已连接的设备
         private AppConfig config;                           //程序配置
         private UDPBroadcaster broadcaster;                 //UDP广播器
         private UDPHandler udpHandler;                      //UDP消息Handler
@@ -25,12 +26,23 @@ namespace ShakeSocketController.Controller
         /// SSC控制状态变更事件
         /// </summary>
         public event EventHandler SSCStateChanged;
+        /// <summary>
+        /// 设备连接列表元素变更事件
+        /// </summary>
         public event EventHandler DeviceListChanged;
         public event EventHandler TCPConnecting;
         public event EventHandler TCPConnected;
         public event EventHandler TCPDisConnect;
 
 
+        /// <summary>
+        /// 当前设备连接列表
+        /// </summary>
+        public List<DeviceInfo> CurDeviceList => deviceInfoList.ToList();
+        /// <summary>
+        /// SSC当前连接Ctrl的设备
+        /// </summary>
+        public DeviceInfo CurCtrlDeviceInfo => ctrlDeviceInfo;
         /// <summary>
         /// 当前程序配置
         /// </summary>
@@ -43,17 +55,32 @@ namespace ShakeSocketController.Controller
         /// SSC监听状态
         /// </summary>
         public bool IsSSCListening => !udpHandler.IsRecStop && udpHandler.IsHandling;
-
-        public ICollection<DeviceInfo> GetCurrentDeviceList() => deviceDictionary.Values;
+        /// <summary>
+        /// Ctrl是否正在连接
+        /// </summary>
+        public bool IsCtrlConnecting => ctrlDeviceInfo != null && !ctrlDeviceInfo.IsConnected;
+        /// <summary>
+        /// Ctrl是否已完成连接
+        /// </summary>
+        public bool IsCtrlConnected => ctrlDeviceInfo != null && ctrlDeviceInfo.IsConnected;
 
 
         public TransactionController()
         {
             //加载程序配置
             config = LoadLatestConfig();
-            // TODO: 在APP配置类中加入设备连接字典，然后在这里初始化加入全局列表
-            //初始化设备列表字典
-            deviceDictionary = new ConcurrentDictionary<IPAddress, DeviceInfo>();
+            //初始化设备列表
+            deviceInfoList = new SynchronizedCollection<DeviceInfo>();
+            //config.historyList.ForEach(item => deviceInfoList.Add(item));
+            Program.CreateTestInfoList(10).ForEach(item => deviceInfoList.Add(item));// TODO: 临时
+            foreach (var item in deviceInfoList)
+            {
+                if (item.IsConnected)
+                {
+                    ctrlDeviceInfo = item;
+                    break;
+                }
+            }
             //初始化广播器、UDP消息Handler
             broadcaster = new UDPBroadcaster(config.BcPort, config.BcInterval);
             // TODO: 合理订阅处理UDPBroadcaster里的2个事件
@@ -113,6 +140,21 @@ namespace ShakeSocketController.Controller
             SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        public void ToggleBCState(bool enabled)
+        {
+            if (enabled)
+            {
+                // TODO: 定下头部的通信协议，修改这里获取广播字节的逻辑；并处理BroadcastStatusChanged事件
+                //无论如何，重新开始广播
+                broadcaster.BeginBroadcast(StrUtil.StrToByte(config.GetLocalInfo().BCJson));
+            }
+            else
+            {
+                //停止广播
+                broadcaster.EndBroadcast();
+            }
+        }
+
         /// <summary>
         /// 从本地加载最新的程序配置，如果加载失败将返回默认值配置
         /// </summary>
@@ -152,21 +194,6 @@ namespace ShakeSocketController.Controller
             }
 
             return false;
-        }
-
-        public void ToggleBCState(bool enabled)
-        {
-            if (enabled)
-            {
-                // TODO: 定下头部的通信协议，修改这里获取广播字节的逻辑；并处理BroadcastStatusChanged事件
-                //无论如何，重新开始广播
-                broadcaster.BeginBroadcast(StrUtil.StrToByte(config.GetLocalInfo().BCJson));
-            }
-            else
-            {
-                //停止广播
-                broadcaster.EndBroadcast();
-            }
         }
 
         public void StartTCPHandler(IPAddress remoteIP)
@@ -209,17 +236,17 @@ namespace ShakeSocketController.Controller
 
         public void CheckInDevice(IPAddress targetIP, DeviceInfo targetInfo)
         {
-            deviceDictionary[targetIP] = targetInfo;
-            Logging.Debug($"IP check in: {targetIP} ({targetInfo.DeviceName})");
-            DeviceListChanged?.Invoke(this, new EventArgs());
+            //deviceDictionary[targetIP] = targetInfo;
+            //Logging.Debug($"IP check in: {targetIP} ({targetInfo.DeviceName})");
+            DeviceListChanged?.Invoke(this, EventArgs.Empty);
         }
 
         public DeviceInfo CheckOutDevice(IPAddress targetIP)
         {
-            if (deviceDictionary.ContainsKey(targetIP))
-            {
-                return deviceDictionary[targetIP];
-            }
+            //if (deviceDictionary.ContainsKey(targetIP))
+            //{
+            //    return deviceDictionary[targetIP];
+            //}
             return null;
         }
 
@@ -229,14 +256,15 @@ namespace ShakeSocketController.Controller
             //  有记录：恰好是已连接的那个设备，则直接处理；否则，按下面“无记录”走↓；
             //  无记录：检查数据内容类型，如果是连接类型，未连接，则执行连接逻辑*，已连接的则直接忽略；
             //      如果是Ctrl类型，已连接，则请求确认身份*，未连接的则直接忽略；
-            if (targetInfo != null)
-            {
-                return targetInfo.Equals(CheckOutDevice(targetIP));
-            }
-            else if (IsBCStop)
-            {
-                return deviceDictionary.ContainsKey(targetIP);
-            }
+
+            //if (targetInfo != null)
+            //{
+            //    return targetInfo.Equals(CheckOutDevice(targetIP));
+            //}
+            //else if (IsBCStop)
+            //{
+            //    return deviceDictionary.ContainsKey(targetIP);
+            //}
             return true;
         }
 

@@ -65,9 +65,6 @@
             this.listBoxDeviceList.FormattingEnabled = true;
             this.listBoxDeviceList.IntegralHeight = false;
             this.listBoxDeviceList.ItemHeight = 12;
-            this.listBoxDeviceList.Items.AddRange(new object[] {
-            "ChrysanHua",
-            "（已连接）ShakeSocketController"});
             this.listBoxDeviceList.Location = new System.Drawing.Point(9, 9);
             this.listBoxDeviceList.Name = "listBoxDeviceList";
             this.listBoxDeviceList.Size = new System.Drawing.Size(180, 152);
@@ -235,7 +232,6 @@
             this.tbDeviceID.ReadOnly = true;
             this.tbDeviceID.Size = new System.Drawing.Size(172, 21);
             this.tbDeviceID.TabIndex = 3;
-            this.tbDeviceID.Text = "73006B15-B9A1-4FCD-B64B-05B20640DEE5";
             this.tbDeviceID.WordWrap = false;
             // 
             // labelIP
@@ -412,6 +408,8 @@
             this.Name = "DeviceListForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "配置连接";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.DeviceListForm_FormClosed);
+            this.Shown += new System.EventHandler(this.DeviceListForm_Shown);
             this.gbDeviceInfo.ResumeLayout(false);
             this.gbDeviceInfo.PerformLayout();
             this.tableLayoutPanel2.ResumeLayout(false);

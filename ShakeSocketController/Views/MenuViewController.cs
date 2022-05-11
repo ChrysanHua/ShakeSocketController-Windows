@@ -117,16 +117,6 @@ namespace ShakeSocketController.Views
         }
 
         /// <summary>
-        /// 更新SSC服务模式菜单的选中项
-        /// </summary>
-        private void UpdateSSCState(AppConfig config)
-        {
-            disabledItem.Checked = !config.IsSSCEnabled;
-            listenOnlyItem.Checked = config.IsSSCEnabled && !config.IsBCEnabled;
-            bcAndListenItem.Checked = config.IsBCEnabled && config.IsBCEnabled;
-        }
-
-        /// <summary>
         /// 保存修改后的程序配置
         /// </summary>
         private void SaveNewConfig(AppConfig config)
@@ -141,13 +131,54 @@ namespace ShakeSocketController.Views
         }
 
         /// <summary>
+        /// 更新SSC服务模式菜单的选中项
+        /// </summary>
+        private void UpdateSSCState(AppConfig config)
+        {
+            //PS：支持在任意线程调用
+            disabledItem.Checked = !config.IsSSCEnabled;
+            listenOnlyItem.Checked = config.IsSSCEnabled && !config.IsBCEnabled;
+            bcAndListenItem.Checked = config.IsBCEnabled && config.IsBCEnabled;
+        }
+
+        /// <summary>
         /// 更新任务栏图标
         /// </summary>
         private void UpdateIconAndText()
         {
+            //PS：支持在任意线程调用
+            //设置图标
+            taskBarIcon.Icon = GetCurIconAndText(out string text);
+
+            //设置提示文本
+            text = $"{SysUtil.GetAssemblyTitle()} {SysUtil.GetVersionStr(4)}{Environment.NewLine}" +
+                $"SSC：{text}";
+            if (_controller.IsCtrlConnected)
+            {
+                //当前已连接某个设备，显示在提示文本里
+                text += $"{Environment.NewLine}{_controller.CurCtrlDeviceInfo.FriendlyName}";
+            }
+
+            if (text.Length > 63)
+            {
+                //图标提示文本最大长度为63，超出长度则截断
+                text = text.Substring(0, 63 - 3) + "...";
+            }
+            taskBarIcon.Text = text;
+        }
+
+        /// <summary>
+        /// 获取当前状态下对应的图标和提示文本
+        /// </summary>
+        /// <param name="text">out参数，返回当前状态的图标提示文本</param>
+        /// <returns>返回当前状态图标对象</returns>
+        public Icon GetCurIconAndText(out string text)
+        {
+            // TODO: 优化->实现各状态图标由白色基础图标用代码生成；
+            //  已连接设备之后统一使用绿色，弃用浅蓝色图标；将“允许控制”状态以斜线方式叠加显示在图标上。
+            //PS：支持在任意线程调用
             int iconSize;           //图标尺寸
             string iconStateStr;    //图标类型
-            string text;            //图标提示文本
 
             Graphics graphics = Graphics.FromHwnd(IntPtr.Zero);
             //获取屏幕DPI用以判断使用什么尺寸的图标
@@ -196,20 +227,8 @@ namespace ShakeSocketController.Views
                 text = "监听#广播";
             }
 
-            //设置图标
-            taskBarIcon.Icon = Icon.FromHandle(((Bitmap)Resources.ResourceManager.GetObject(
+            return Icon.FromHandle(((Bitmap)Resources.ResourceManager.GetObject(
                 $"Ctrl{iconStateStr}{iconSize}", Resources.Culture)).GetHicon());
-
-            //设置提示文本
-            // TODO: 如果当前已连接某个设备，则在提示文本里换行加上“已连接：NickName”
-            text = $"{SysUtil.GetAssemblyTitle()} {SysUtil.GetVersionStr(4)}{Environment.NewLine}" +
-                $"SSC：{text}";
-            if (text.Length > 63)
-            {
-                //图标提示文本最大长度为63，超出长度则截断
-                text = text.Substring(0, 63 - 3) + "...";
-            }
-            taskBarIcon.Text = text;
         }
 
         /// <summary>
@@ -221,6 +240,7 @@ namespace ShakeSocketController.Views
         public void ShowBalloonTip(string text, string title = null,
             ToolTipIcon tipIcon = ToolTipIcon.Info)
         {
+            //PS：支持在任意线程调用
             taskBarIcon.ShowBalloonTip(5000, title ?? SysUtil.GetAssemblyTitle(), text, tipIcon);
         }
 
@@ -377,7 +397,7 @@ namespace ShakeSocketController.Views
             if (e.Button == MouseButtons.Middle)
             {
                 //显示日志，直接调用同一个点击事件
-                ShowLog_Click(sender, e);
+                showLogItem.PerformClick();
             }
         }
 

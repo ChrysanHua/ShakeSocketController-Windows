@@ -37,11 +37,13 @@ namespace ShakeSocketController.Utils.Tests
         {
             AppConfig config = AppConfig.GetDefaultConfig();
             string json = StrUtil.ObjectToJson(config);
+            string fileJson = StrUtil.ObjectToJson(config, true);
             LocalInfo localInfo = config.GetLocalInfo();
             string bcJson = localInfo.BCJson;
             string connJson1 = localInfo.GetIntactJson(SysUtil.GenerateUUID());
             string connJson2 = localInfo.GetIntactJson(SysUtil.GenerateUUID());
 
+            Console.WriteLine(fileJson);
             Console.WriteLine(json);
             Console.WriteLine(bcJson);
             Console.WriteLine(connJson1);

@@ -1,8 +1,11 @@
 ﻿using ShakeSocketController.Controller;
+using ShakeSocketController.Model;
 using ShakeSocketController.Utils;
 using ShakeSocketController.Views;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Windows.Forms;
 
 namespace ShakeSocketController
@@ -49,12 +52,31 @@ namespace ShakeSocketController
                 return;
             }
 
+            //使跨线程操作UI报错，用来Debug
+            Control.CheckForIllegalCrossThreadCalls = true;
+
             //initialize and start
             MainController = new TransactionController();
             MenuController = new MenuViewController(MainController);
             MainController.Run();
 
             Application.Run();
+        }
+
+        //测试用的方法
+        public static List<DeviceInfo> CreateTestInfoList(int count)
+        {
+            List<DeviceInfo> list = new List<DeviceInfo>(count);
+            for (int i = 1; i <= count; i++)
+            {
+                list.Add(new DeviceInfo($"UUID{i}", $"Device{i}", $"User{i}",
+                    IPAddress.Parse($"192.168.9.{i}"))
+                {
+                    IsConnected = i == 2,
+                });
+            }
+
+            return list;
         }
 
         /// <summary>
