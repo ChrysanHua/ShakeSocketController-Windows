@@ -38,7 +38,7 @@ namespace ShakeSocketController
             if (!SingleStartup.Register($"Global\\{appTitle}_{SysUtil.GetAssemblyGUID()}"))
             {
                 //the app has been started
-                MessageBox.Show($"{appTitle}已启动！");
+                MessageBox.Show($"{appTitle}已启动！", appTitle);
                 return;
             }
 
@@ -48,7 +48,7 @@ namespace ShakeSocketController
             //register the log file
             if (!Logging.Init($"{appTitle}.log"))
             {
-                MessageBox.Show("日志模块初始化失败！");
+                MessageBox.Show("日志模块初始化失败！", appTitle);
                 return;
             }
 

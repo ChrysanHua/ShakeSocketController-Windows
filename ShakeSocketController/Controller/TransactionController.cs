@@ -243,6 +243,31 @@ namespace ShakeSocketController.Controller
             DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(info, deviceInfoList.IndexOf(info)));
         }
 
+        /// <summary>
+        /// 自定义删除设备连接信息
+        /// </summary>
+        /// <param name="info">要删除的设备连接信息对象</param>
+        public void CustomDeleteDevice(DeviceInfo info)
+        {
+            //执行删除
+            if (!deviceInfoList.Remove(info))
+            {
+                MessageBox.Show("删除失败！", "删除失败", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            //保存新列表
+            if (!SaveDeviceList())
+            {
+                //保存失败，告知用户
+                MessageBox.Show(
+                    $"配置已变更，但保存失败！{Environment.NewLine}注意：SSC依然会执行您所选的操作。",
+                    "配置保存失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            //触发事件
+            DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(info, deviceInfoList.IndexOf(info),
+                false, true));
+        }
+
         public void StartTCPHandler(IPAddress remoteIP)
         {
             if (tcpHandler == null || tcpHandler.IsInvalid)

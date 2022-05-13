@@ -257,7 +257,17 @@ namespace ShakeSocketController.Views
         /// </summary>
         private void btnDeviceDelete_Click(object sender, EventArgs e)
         {
-
+            int index = listBoxDeviceList.SelectedIndex;
+            if (index >= 0)
+            {
+                DeviceInfo info = curDeviceList[index];
+                if (MessageBox.Show($"确定要删除【{info.NickName}】吗？", "删除确定",
+                    MessageBoxButtons.OKCancel) == DialogResult.OK)
+                {
+                    //通知controller执行删除
+                    _controller.CustomDeleteDevice(info);
+                }
+            }
         }
 
         /// <summary>
