@@ -34,6 +34,7 @@ namespace ShakeSocketController.Views
             //订阅controller的相关事件
             _controller.DeviceListChanged += Controller_DeviceListChanged;
             _controller.SSCStateChanged += Controller_SSCStateChanged;
+            _controller.DeviceInfoChanged += Controller_DeviceInfoChanged;
 
             //初始化窗口的设备列表
             UpdateDeviceListBox(_controller.CurDeviceList);
@@ -225,11 +226,30 @@ namespace ShakeSocketController.Views
         }
 
         /// <summary>
+        /// 单个设备连接信息元素变更事件
+        /// </summary>
+        private void Controller_DeviceInfoChanged(object sender, DeviceInfoEventArgs e)
+        {
+            //直接更新整个列表
+            Controller_DeviceListChanged(sender, e);
+        }
+
+        /// <summary>
         /// 保存修改按钮
         /// </summary>
         private void btnDeviceModify_Click(object sender, EventArgs e)
         {
-
+            int index = listBoxDeviceList.SelectedIndex;
+            if (index >= 0)
+            {
+                DeviceInfo info = curDeviceList[index];
+                //执行修改
+                info.NickName = tbNickName.Text.Trim();
+                info.IsAutoConnect = cbAutoConnect.Checked;
+                info.IsDisabled = cbDisabled.Checked;
+                //通知controller
+                _controller.CustomModifyDevice(info);
+            }
         }
 
         /// <summary>
@@ -264,6 +284,7 @@ namespace ShakeSocketController.Views
             //取消订阅controller的相关事件
             _controller.DeviceListChanged -= Controller_DeviceListChanged;
             _controller.SSCStateChanged -= Controller_SSCStateChanged;
+            _controller.DeviceInfoChanged -= Controller_DeviceInfoChanged;
         }
 
     }

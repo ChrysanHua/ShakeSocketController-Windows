@@ -49,6 +49,7 @@ namespace ShakeSocketController.Views
 
             //订阅controller的事件
             _controller.SSCStateChanged += Controller_SSCStateChanged;
+            _controller.DeviceInfoChanged += Controller_DeviceInfoChanged;
 
             //将程序配置加载更新到菜单中
             LoadConifg();
@@ -256,10 +257,31 @@ namespace ShakeSocketController.Views
         }
 
         /// <summary>
+        /// 全局控制器_单个设备连接信息元素变更事件
+        /// </summary>
+        private void Controller_DeviceInfoChanged(object sender, DeviceInfoEventArgs e)
+        {
+            if (e.IsConnectedInfo)
+            {
+                //发生修改的是当前已连接的设备，更新任务栏图标提示文本信息
+                UpdateIconAndText();
+            }
+        }
+
+        /// <summary>
         /// 退出_点击事件
         /// </summary>
         private void Quit_Click(object sender, EventArgs e)
         {
+            //退出前检查配置保存情况
+            if (_controller.CurConfig.HadSaveFailed
+                && !_controller.SaveConfig(_controller.CurConfig)
+                && MessageBox.Show(
+                    $"配置已变更，但保存失败！{Environment.NewLine}退出程序将丢失这些配置，确定要退出吗？",
+                    "配置未保存", MessageBoxButtons.OKCancel, MessageBoxIcon.Information)
+                == DialogResult.Cancel)
+                return;
+
             //关闭controller
             _controller.Exit();
             //关闭任务栏图标

@@ -26,7 +26,7 @@ namespace ShakeSocketController.Model
         public bool IsDisabled;                         //是否禁用
 
         [JsonIgnore]
-        public bool IsConnected;                        //当前是否已连接
+        public volatile bool IsConnected;               //当前是否已连接
 
         [JsonIgnore]
         public bool HadConnected =>
@@ -63,7 +63,7 @@ namespace ShakeSocketController.Model
                 DeviceName != UNKNOWN_DEVICE_NAME &&
                 UserName != UNKNOWN_USER_NAME &&
                 IP != null &&
-                !string.IsNullOrWhiteSpace(NickName) &&
+                NickName != null &&
                 !string.IsNullOrWhiteSpace(ClientVersion);
         }
 

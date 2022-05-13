@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Windows.Forms;
 
 namespace ShakeSocketController.Controller
 {
@@ -30,6 +31,10 @@ namespace ShakeSocketController.Controller
         /// 设备连接列表元素变更事件
         /// </summary>
         public event EventHandler DeviceListChanged;
+        /// <summary>
+        /// 单个设备连接信息元素变更事件
+        /// </summary>
+        public event EventHandler<DeviceInfoEventArgs> DeviceInfoChanged;
         public event EventHandler TCPConnecting;
         public event EventHandler TCPConnected;
         public event EventHandler TCPDisConnect;
@@ -140,6 +145,9 @@ namespace ShakeSocketController.Controller
             SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// 切换广播状态
+        /// </summary>
         public void ToggleBCState(bool enabled)
         {
             if (enabled)
@@ -185,6 +193,8 @@ namespace ShakeSocketController.Controller
                 try
                 {
                     AppConfig.Save(config);
+                    //重置标志
+                    config.HadSaveFailed = false;
                     return true;
                 }
                 catch (Exception e)
@@ -193,7 +203,44 @@ namespace ShakeSocketController.Controller
                 }
             }
 
+            if (config != null)
+            {
+                //设置保存失败标志
+                config.HadSaveFailed = true;
+            }
             return false;
+        }
+
+        /// <summary>
+        /// 保存当前设备连接列表到本地
+        /// </summary>
+        /// <returns>返回保存是否成功，如果配置无效将直接返回false而不执行任何保存操作</returns>
+        public bool SaveDeviceList()
+        {
+            //先清空旧列表
+            config.historyList.Clear();
+            //获取新列表
+            config.historyList = deviceInfoList.ToList();
+            //保存
+            return SaveConfig(config);
+        }
+
+        /// <summary>
+        /// 自定义修改设备连接信息
+        /// </summary>
+        /// <param name="info">已修改的设备连接信息对象</param>
+        public void CustomModifyDevice(DeviceInfo info)
+        {
+            //保存列表
+            if (!SaveDeviceList())
+            {
+                //保存失败，告知用户
+                MessageBox.Show(
+                    $"配置已变更，但保存失败！{Environment.NewLine}注意：SSC依然会执行您所选的操作。",
+                    "配置保存失败", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            //触发事件
+            DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(info, deviceInfoList.IndexOf(info)));
         }
 
         public void StartTCPHandler(IPAddress remoteIP)

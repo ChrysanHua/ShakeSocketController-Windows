@@ -37,6 +37,8 @@ namespace ShakeSocketController.Model
         [JsonIgnore]
         public bool HadLoadFailed;                      //本地配置加载失败标志
         [JsonIgnore]
+        public bool HadSaveFailed;                      //本地配置保存失败标志
+        [JsonIgnore]
         public readonly string DeviceName;              //本机设备名
         [JsonIgnore]
         public readonly string UserName;                //本机当前登录的用户名
@@ -66,6 +68,7 @@ namespace ShakeSocketController.Model
 
             IsDefault = false;
             HadLoadFailed = false;
+            HadSaveFailed = false;
         }
 
         /// <summary>
