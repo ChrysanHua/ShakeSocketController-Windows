@@ -268,6 +268,26 @@ namespace ShakeSocketController.Controller
                 false, true));
         }
 
+        /// <summary>
+        /// 断开Ctrl连接
+        /// </summary>
+        public void DisconnectCtrl()
+        {
+            // TODO: 1.发送断连信号；2.切换对象状态；3.切换UI状态；
+
+            //先清除对象引用，再设置状态
+            DeviceInfo tmp = ctrlDeviceInfo;
+            ctrlDeviceInfo = null;
+            tmp.IsConnected = false;
+            //触发设备连接元素变更事件
+            DeviceInfoChanged?.Invoke(this, new DeviceInfoEventArgs(tmp, deviceInfoList.IndexOf(tmp),
+                true));
+            //切换广播状态（如果需要）
+            ToggleBCState(config.IsBCEnabled);
+            //触发SSC状态变更事件
+            SSCStateChanged?.Invoke(this, EventArgs.Empty);
+        }
+
         public void StartTCPHandler(IPAddress remoteIP)
         {
             if (tcpHandler == null || tcpHandler.IsInvalid)

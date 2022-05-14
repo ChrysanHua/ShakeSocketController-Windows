@@ -1,15 +1,10 @@
 ﻿using ShakeSocketController.Controller;
 using ShakeSocketController.Model;
-using ShakeSocketController.Properties;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace ShakeSocketController.Views
@@ -141,7 +136,6 @@ namespace ShakeSocketController.Views
         private void lbDeviceList_SelectedIndexChanged(object sender, EventArgs e)
         {
             int index = listBoxDeviceList.SelectedIndex;
-            Logging.Debug($"select index: {index}");
             if (index >= 0)
             {
                 //加载选中项的设备信息
@@ -174,8 +168,6 @@ namespace ShakeSocketController.Views
         /// </summary>
         private void Controller_DeviceListChanged(object sender, EventArgs e)
         {
-            Logging.Debug($"Controller_DeviceListChanged: threadID is " +
-                $"{Thread.CurrentThread.ManagedThreadId}, sender is {sender}");
             if (this.InvokeRequired)        //判断是否跨线程执行
             {
                 this.Invoke(new EventHandler(Controller_DeviceListChanged));
@@ -232,6 +224,11 @@ namespace ShakeSocketController.Views
         {
             //直接更新整个列表
             Controller_DeviceListChanged(sender, e);
+            //如果是Ctrl连接状态变更，调整按钮的可用性
+            if (e.IsConnectStateChanged)
+            {
+                btnDisConnect.Enabled = _controller.IsCtrlConnected;
+            }
         }
 
         /// <summary>
@@ -275,7 +272,16 @@ namespace ShakeSocketController.Views
         /// </summary>
         private void btnDisConnect_Click(object sender, EventArgs e)
         {
-
+            if (_controller.IsCtrlConnected)
+            {
+                DeviceInfo ctrlInfo = _controller.CurCtrlDeviceInfo;
+                if (MessageBox.Show($"确定要断开对【{ctrlInfo.NickName}】的连接吗？", "断开连接",
+                    MessageBoxButtons.OKCancel) == DialogResult.OK)
+                {
+                    //通知controller执行断开连接
+                    _controller.DisconnectCtrl();
+                }
+            }
         }
 
         /// <summary>

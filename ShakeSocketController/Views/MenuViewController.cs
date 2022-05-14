@@ -261,9 +261,9 @@ namespace ShakeSocketController.Views
         /// </summary>
         private void Controller_DeviceInfoChanged(object sender, DeviceInfoEventArgs e)
         {
-            if (e.IsConnectedInfo)
+            if (e.IsConnectedInfo || e.IsConnectStateChanged)
             {
-                //发生修改的是当前已连接的设备，更新任务栏图标提示文本信息
+                //更新任务栏图标提示文本信息
                 UpdateIconAndText();
             }
         }
