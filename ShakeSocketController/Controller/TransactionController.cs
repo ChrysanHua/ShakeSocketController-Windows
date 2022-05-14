@@ -9,6 +9,8 @@ using System.Windows.Forms;
 
 namespace ShakeSocketController.Controller
 {
+    // TODO: SSC在自动模式下时，连接成功则自动停止广播，断开连接就自动开始广播。
+
     /// <summary>
     /// 全局控制器类
     /// </summary>
@@ -21,7 +23,6 @@ namespace ShakeSocketController.Controller
         private AppConfig config;                           //程序配置
         private UDPBroadcaster broadcaster;                 //UDP广播器
         private UDPHandler udpHandler;                      //UDP消息Handler
-        private TCPHandler tcpHandler;
 
         /// <summary>
         /// SSC控制状态变更事件
@@ -35,9 +36,6 @@ namespace ShakeSocketController.Controller
         /// 单个设备连接信息元素变更事件
         /// </summary>
         public event EventHandler<DeviceInfoEventArgs> DeviceInfoChanged;
-        public event EventHandler TCPConnecting;
-        public event EventHandler TCPConnected;
-        public event EventHandler TCPDisConnect;
 
 
         /// <summary>
@@ -117,8 +115,6 @@ namespace ShakeSocketController.Controller
         {
             broadcaster?.Close();
             udpHandler?.Close();
-            StopTCPHandler();
-
         }
 
         /// <summary>
@@ -288,42 +284,9 @@ namespace ShakeSocketController.Controller
             SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void StartTCPHandler(IPAddress remoteIP)
-        {
-            if (tcpHandler == null || tcpHandler.IsInvalid)
-                tcpHandler = new TCPHandler(this);
-            //tcpHandler.BeginHandle(new IPEndPoint(remoteIP, TCP_PORT));
-            TCPConnecting?.Invoke(this, new EventArgs());
-        }
-
-        public void StopTCPHandler()
-        {
-            if (tcpHandler == null) return;
-            tcpHandler.Close();
-            TCPDisConnect?.Invoke(this, new EventArgs());
-        }
-
-        public void TCPConnectionSuccessful()
-        {
-            //PauseBroadcast();
-            TCPConnected?.Invoke(this, new EventArgs());
-        }
-
-        public void TCPConnectionDisconnect()
-        {
-            //TCP connection break off
-            //StartBroadcast();
-            TCPDisConnect?.Invoke(this, new EventArgs());
-        }
-
         public void SendUDP(byte[] dataBuf, IPEndPoint targetEP)
         {
             udpHandler.SendTo(dataBuf, targetEP);
-        }
-
-        public void SendTCP(byte[] dataBuf)
-        {
-            tcpHandler.Send(dataBuf);
         }
 
         public void CheckInDevice(IPAddress targetIP, DeviceInfo targetInfo)
@@ -368,13 +331,6 @@ namespace ShakeSocketController.Controller
                 Logging.Debug($"type:{packet.TypeStr}, data:{packet.DataStr}.");
                 MessageAdapter.CreateMsgHandler(packet)?.Handle(this, e.IPE.Address);
             }
-        }
-
-        public void HandleTCPMsg(byte[] msgDataBuf, int bufLen)
-        {
-            MsgPacket packet = MessageAdapter.PackDataBuf(msgDataBuf, bufLen);
-            Logging.Debug($"type:{packet.TypeStr}, data:{packet.DataStr}.");
-            MessageAdapter.CreateMsgHandler(packet)?.Handle(this, null);
         }
 
     }

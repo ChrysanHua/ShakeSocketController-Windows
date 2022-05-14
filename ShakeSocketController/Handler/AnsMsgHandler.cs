@@ -19,7 +19,7 @@ namespace ShakeSocketController.Handler
 
         public override void Respond(TransactionController controller, object state)
         {
-            controller.SendTCP(MsgPacket.Parse(MsgPacket.TYPE_ANS, dataStr).MsgData);
+            //controller.SendTCP(MsgPacket.Parse(MsgPacket.TYPE_ANS, dataStr).MsgData);
         }
     }
 }

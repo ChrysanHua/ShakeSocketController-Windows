@@ -1,5 +1,4 @@
-﻿using ShakeSocketController.Utils;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -9,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace ShakeSocketController.Controller.Service
 {
+    [Obsolete("已弃用以TCP方式进行通讯")]
     class TCPHandler
     {
         private readonly TransactionController _controller;
@@ -79,7 +79,7 @@ namespace ShakeSocketController.Controller.Service
                 tcpSocket.EndConnect(ar);
                 Logging.Info("Connection Established Successfully");
                 //do something by controller in here
-                _controller.TCPConnectionSuccessful();
+                //_controller.TCPConnectionSuccessful();
                 tcpSocket.BeginReceive(recBuf, 0, recBuf.Length, SocketFlags.None,
                     new AsyncCallback(ReceiveCallback), null);
             }
@@ -100,7 +100,7 @@ namespace ShakeSocketController.Controller.Service
                     //do something by controller in here (TODO: handle packet splicing)
                     Logging.Debug(tcpSocket.RemoteEndPoint,
                         tcpSocket.LocalEndPoint, len, "TCPReceive");
-                    _controller.HandleTCPMsg(recBuf, len);
+                    //_controller.HandleTCPMsg(recBuf, len);
                     tcpSocket.BeginReceive(recBuf, 0, recBuf.Length, SocketFlags.None,
                         new AsyncCallback(ReceiveCallback), null);
                 }
@@ -109,7 +109,7 @@ namespace ShakeSocketController.Controller.Service
                     //remote socket shutdown, so close local socket too
                     Close();
                     //do something by controller in here
-                    _controller.TCPConnectionDisconnect();
+                    //_controller.TCPConnectionDisconnect();
                 }
             }
             catch (Exception e)

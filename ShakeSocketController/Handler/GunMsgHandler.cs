@@ -23,7 +23,7 @@ namespace ShakeSocketController.Handler
                 DeviceInfo targetInfo = StrUtil.JsonToObject<DeviceInfo>(dataStr);
                 if (!targetInfo.IsUsable()) return;
                 //if (!controller.ShouldHandleMsg(targetIP, targetInfo)) return;
-                controller.StartTCPHandler(targetInfo.IP);
+                //controller.StartTCPHandler(targetInfo.IP);
             }
             catch (Exception e)
             {
