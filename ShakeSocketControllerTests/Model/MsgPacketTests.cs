@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using ShakeSocketController.Model;
+using ShakeSocketController.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,7 +60,7 @@ namespace ShakeSocketController.Model.Tests
             //注意源buf是不变的
             Console.WriteLine(Convert.ToString(buf[2], 2));
             //实际是有变化的
-            Console.WriteLine(Convert.ToString(packet.headerBuf[2], 2));
+            //Console.WriteLine(Convert.ToString(packet.headerBuf[2], 2));
         }
 
         [TestMethod()]
@@ -81,10 +82,29 @@ namespace ShakeSocketController.Model.Tests
             Console.WriteLine(Convert.ToString(b, 2));
             Console.WriteLine(packet.DataType);
             packet.DataType = PacketDataType.Int;
-            Console.WriteLine(packet.headerBuf[3].ToString("X2"));
-            Console.WriteLine(Convert.ToString(packet.headerBuf[3], 2));
+            //Console.WriteLine(packet.headerBuf[3].ToString("X2"));
+            //Console.WriteLine(Convert.ToString(packet.headerBuf[3], 2));
             Console.WriteLine(packet.DataType);
         }
 
+        [TestMethod()]
+        public void DataLengthTest()
+        {
+            ushort len = 4096;
+            byte[] lenBuf = BitConverter.GetBytes(len);
+            Console.WriteLine(StrUtil.ByteToHexStr(lenBuf));
+            byte[] buf = { 0, 0, 0, 0, lenBuf[0], lenBuf[1] };
+            MsgPacket packet = new MsgPacket(buf);
+            Console.WriteLine(packet.DataLength);
+            packet.DataLength = 46;
+            Console.WriteLine(packet.DataLength);
+        }
+
+        [TestMethod()]
+        public void MsgPacketTest()
+        {
+            byte[] buf = { 0, 0, 0, 0, 0, 0 };
+            MsgPacket packet = new MsgPacket(buf, new byte[0]);
+        }
     }
 }
