@@ -93,6 +93,7 @@
     <Compile Include="Model\HandleUDPEventArgs.cs" />
     <Compile Include="Model\LocalInfo.cs" />
     <Compile Include="Model\MsgPacket.cs" />
+    <Compile Include="Model\PacketDataType.cs" />
     <Compile Include="Model\SocketAsyncState.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
