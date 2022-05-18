@@ -20,7 +20,6 @@ namespace ShakeSocketController.Model
         public const string TYPE_IP = "[ipp]";   // <
         public const string TYPE_ANS = "[ans]"; // <>
         public const string TYPE_GUN = "[gun]"; // <>
-        //private DeviceInfo targetInfo;
 
         /*
          * +----------+----------+----------------+------------------+----------+----------+
@@ -30,17 +29,17 @@ namespace ShakeSocketController.Model
          * +----------+----------+----------------+------------------+----------+----------+
          * | 1Byte    | 1Byte    | 1Byte          | 1Byte(仅用低4位)  | 2Byte    | nByte    |
          * +----------+----------+----------------+------------------+----------+----------+
-         * | 0x01     | 0x00     | 0x09           | 0x01             | 0x1000   | …        |
+         * | 0x01     | 0x00     | 0x01           | 0x01             | 0x1000   | …        |
          * +----------+----------+----------------+------------------+----------+----------+
          */
 
 
         /* 数据补充说明码：
-         * +---------+------+----------+---+---+----------+------+------+------+
-         * | 对应项  | 机位  | 保留备用  |   |   | 需要回复 | 应答  | 测试 | 冗余 |
-         * +---------+------+----------+---+---+----------+------+------+------+
-         * | Bit码位 | 8    | 7         | 6 | 5 | 4       | 3    | 2    | 1    |
-         * +---------+------+----------+---+---+----------+------+------+------+
+         * +---------+------+----------+---+----------+----------+------+------+------+
+         * | 对应项  | 机位  | 保留备用  |   | 优先回复 | 需要回复  | 应答  | 测试 | 冗余 |
+         * +---------+------+----------+---+----------+----------+------+------+------+
+         * | Bit码位 | 8    | 7         | 6 | 5       | 4        | 3     | 2    | 1   |
+         * +---------+------+----------+---+----------+----------+------+------+------+
          */
 
 
@@ -51,6 +50,16 @@ namespace ShakeSocketController.Model
         /// 完整数据报文Buf
         /// </summary>
         public byte[] MsgData => ByteUtil.ConcatByte(headerBuf, dataBuf);
+
+        /// <summary>
+        /// 主功能码
+        /// </summary>
+        public byte MainFunCode => headerBuf[0];
+
+        /// <summary>
+        /// 次功能码
+        /// </summary>
+        public byte SubFunCode => headerBuf[1];
 
         /// <summary>
         /// 是否冗余重发报文
@@ -83,6 +92,14 @@ namespace ShakeSocketController.Model
         {
             get => GetHeaderNotesMask(4);
             set => SetHeaderNotesMask(value, 4);
+        }
+        /// <summary>
+        /// 该报文是否需要先回复然后再执行具体操作
+        /// </summary>
+        public bool RespondFirst
+        {
+            get => GetHeaderNotesMask(5);
+            set => SetHeaderNotesMask(value, 5);
         }
         /// <summary>
         /// 备用保留位的使能值
@@ -135,9 +152,12 @@ namespace ShakeSocketController.Model
             if (msgData == null)
                 throw new ArgumentNullException(nameof(msgData));
             if (msgData.Length < 6)
-                throw new ArgumentException("Array length is too short!", nameof(msgData));
+                throw new ArgumentException("Buffer length is too short!", nameof(msgData));
 
-            headerBuf = ByteUtil.SplitByte(msgData, HEADER_LENGTH, out dataBuf);
+            this.headerBuf = ByteUtil.SplitByte(msgData, HEADER_LENGTH, out this.dataBuf);
+
+            if (this.DataLength != this.dataBuf.Length)
+                throw new ArgumentException("Data buffer length mismatch!", nameof(msgData));
         }
 
         public MsgPacket(byte[] headerBuf, byte[] dataBuf)
@@ -146,11 +166,29 @@ namespace ShakeSocketController.Model
                 throw new ArgumentNullException(headerBuf == null ?
                     nameof(dataBuf) : nameof(headerBuf));
             if (headerBuf.Length < 6)
-                throw new ArgumentException("Array length is too short!", nameof(headerBuf));
+                throw new ArgumentException("Buffer length is too short!", nameof(headerBuf));
 
             this.headerBuf = headerBuf;
             this.dataBuf = dataBuf;
+
+            if (this.DataLength != this.dataBuf.Length)
+                throw new ArgumentException("Data buffer length mismatch!", nameof(dataBuf));
         }
+
+        public MsgPacket(byte mainFunCode, byte subFunCode, PacketDataType dataType, byte[] dataBuf)
+        {
+            if (dataBuf == null)
+                throw new ArgumentNullException(nameof(dataBuf));
+
+            byte[] lenBuf = BitConverter.GetBytes(Convert.ToUInt16(dataBuf.Length));
+            this.headerBuf = new byte[] { mainFunCode, subFunCode, 0,
+                (byte)dataType, lenBuf[0], lenBuf[1] };
+            this.dataBuf = dataBuf;
+        }
+
+        public MsgPacket(byte mainFunCode, byte subFunCode)
+            : this(mainFunCode, subFunCode, PacketDataType.None, new byte[0]) { }
+
 
         public static MsgPacket Parse(string typeStr, string dataStr)
         {
@@ -190,6 +228,12 @@ namespace ShakeSocketController.Model
                 return true;
             }
 
+            return false;
+        }
+
+        public bool IsVerboseEquals(MsgPacket packet)
+        {
+            // TODO: 判断两个报文是否可以认定为冗余重复报文
             return false;
         }
 
