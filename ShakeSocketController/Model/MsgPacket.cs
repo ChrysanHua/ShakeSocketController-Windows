@@ -16,6 +16,7 @@ namespace ShakeSocketController.Model
         /// 报文头数据的字节长度
         /// </summary>
         public const int HEADER_LENGTH = 6;
+        // TODO: 移除这些旧代码
         public const string TYPE_CMD = "[cmd]"; // <
         public const string TYPE_IP = "[ipp]";   // <
         public const string TYPE_ANS = "[ans]"; // <>
@@ -142,16 +143,22 @@ namespace ShakeSocketController.Model
             }
         }
 
+        /// <summary>
+        /// 报文头的十六进制易读字符串
+        /// </summary>
+        public string HeaderHexStr => StrUtil.ByteToHexStr(headerBuf, true);
 
-        public string TypeStr => StrUtil.ByteToStr(headerBuf).Substring(0, HEADER_LENGTH);
-        public string DataStr => StrUtil.ByteToStr(dataBuf);
+        /// <summary>
+        /// 数据单元的十六进制字符串
+        /// </summary>
+        public string DataHexStr => StrUtil.ByteToHexStr(dataBuf);
 
 
         public MsgPacket(byte[] msgData)
         {
             if (msgData == null)
                 throw new ArgumentNullException(nameof(msgData));
-            if (msgData.Length < 6)
+            if (msgData.Length < HEADER_LENGTH)
                 throw new ArgumentException("Buffer length is too short!", nameof(msgData));
 
             this.headerBuf = ByteUtil.SplitByte(msgData, HEADER_LENGTH, out this.dataBuf);
@@ -165,7 +172,7 @@ namespace ShakeSocketController.Model
             if (headerBuf == null || dataBuf == null)
                 throw new ArgumentNullException(headerBuf == null ?
                     nameof(dataBuf) : nameof(headerBuf));
-            if (headerBuf.Length < 6)
+            if (headerBuf.Length < HEADER_LENGTH)
                 throw new ArgumentException("Buffer length is too short!", nameof(headerBuf));
 
             this.headerBuf = headerBuf;
@@ -231,9 +238,45 @@ namespace ShakeSocketController.Model
             return false;
         }
 
-        public bool IsVerboseEquals(MsgPacket packet)
+        /// <summary>
+        /// 判断与指定的数据报文对象是否使用相同的（主、次）功能码
+        /// </summary>
+        public bool FunCodeEquals(MsgPacket packet)
         {
-            // TODO: 判断两个报文是否可以认定为冗余重复报文
+            if (packet != null && MainFunCode.Equals(packet.MainFunCode)
+                && SubFunCode.Equals(packet.SubFunCode))
+                return true;
+
+            return false;
+        }
+
+        /// <summary>
+        /// 判断与指定的数据报文对象是否包含相似的报文头，即除了数据补充说明码以外报文头其余部分完全相同
+        /// </summary>
+        public bool WithSameHeader(MsgPacket packet)
+        {
+            for (int i = 0; i < HEADER_LENGTH; i++)
+            {
+                if (i != 2)
+                {
+                    if (!this.headerBuf[i].Equals(packet?.headerBuf[i]))
+                        return false;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 判断与指定的数据报文对象是否为冗余意义上的相同
+        /// </summary>
+        public bool VerboseEquals(MsgPacket packet)
+        {
+            //除数据补充说明码中的冗余位以外，其余部分完全相同
+            if (WithSameHeader(packet) && this.dataBuf.SequenceEqual(packet.dataBuf)
+                && ((this.headerBuf[2] ^ packet.headerBuf[2]) & 0xFE) == 0)
+                return true;
+
             return false;
         }
 

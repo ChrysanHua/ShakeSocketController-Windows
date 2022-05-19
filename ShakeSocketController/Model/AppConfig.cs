@@ -25,6 +25,7 @@ namespace ShakeSocketController.Model
         public int BcInterval;                          //每次广播的间隔时间（毫秒）
         public int MsgPort;                             //消息端口号
         public int MsgMaxReceiveBufSize;                //接收消息数据包的Buf大小
+        public int MsgReceiveTimeout;                   //接收消息数据包的超时时长
 
         public bool AllowCtrlOperation;                 //允许Ctrl控制
         public bool IsSSCEnabled;                       //SSC启用状态
@@ -59,6 +60,7 @@ namespace ShakeSocketController.Model
             BcInterval = 3000;
             MsgPort = 10019;
             MsgMaxReceiveBufSize = 4096;
+            MsgReceiveTimeout = 3000;
 
             AllowCtrlOperation = true;
             IsSSCEnabled = true;
@@ -146,7 +148,7 @@ namespace ShakeSocketController.Model
                 return false;
             if (config.MsgPort <= 0 || config.MsgPort > 65535)
                 return false;
-            if (config.BcInterval < 0)
+            if (config.BcInterval < 0 || config.MsgReceiveTimeout < 0)
                 return false;
             if (config.MsgMaxReceiveBufSize < 1024 || config.MsgMaxReceiveBufSize > 65536)
                 return false;

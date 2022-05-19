@@ -57,6 +57,7 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="Controller\MessageAdapterTests.cs" />
     <Compile Include="Controller\TransactionControllerTests.cs" />
     <Compile Include="Model\MsgPacketTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -35,7 +35,7 @@ namespace ShakeSocketController.Handler
         {
             IPEndPoint targetEP = state as IPEndPoint;
             if (targetEP == null) return;
-            controller.SendUDP(MsgPacket.Parse(MsgPacket.TYPE_GUN, dataStr).MsgData, targetEP);
+            //controller.SendUDPMsgPacket(MsgPacket.Parse(MsgPacket.TYPE_GUN, dataStr).MsgData, targetEP);
         }
     }
 }

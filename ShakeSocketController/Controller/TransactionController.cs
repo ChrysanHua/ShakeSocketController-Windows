@@ -284,9 +284,14 @@ namespace ShakeSocketController.Controller
             SSCStateChanged?.Invoke(this, EventArgs.Empty);
         }
 
-        public void SendUDP(byte[] dataBuf, IPEndPoint targetEP)
+        /// <summary>
+        /// 发送UDP数据报文
+        /// </summary>
+        /// <param name="packet">要发送的数据报文对象</param>
+        /// <param name="targetEP">目标地址</param>
+        public void SendUDPMsgPacket(MsgPacket packet, IPEndPoint targetEP)
         {
-            udpHandler.SendTo(dataBuf, targetEP);
+            udpHandler.SendTo(packet?.MsgData, targetEP);
         }
 
         public void CheckInDevice(IPAddress targetIP, DeviceInfo targetInfo)
@@ -305,31 +310,48 @@ namespace ShakeSocketController.Controller
             return null;
         }
 
-        public bool ShouldHandleMsg(IPAddress targetIP, DeviceInfo targetInfo = null)
+        /// <summary>
+        /// 判断是否应该处理指定的数据Buf
+        /// </summary>
+        /// <param name="msgData">接收到的数据报文</param>
+        /// <param name="ipe">对方的地址</param>
+        /// <param name="packet">数据报文对象（如果打包失败将返回null）</param>
+        public bool ShouldHandleMsg(byte[] msgData, IPEndPoint ipe, out MsgPacket packet)
         {
-            // TODO: 这个判断逻辑要大改：先判断IP有没有记录，
+            // TODO: 旧记录：先判断IP有没有记录，
             //  有记录：恰好是已连接的那个设备，则直接处理；否则，按下面“无记录”走↓；
             //  无记录：检查数据内容类型，如果是连接类型，未连接，则执行连接逻辑*，已连接的则直接忽略；
             //      如果是Ctrl类型，已连接，则请求确认身份*，未连接的则直接忽略；
 
-            //if (targetInfo != null)
-            //{
-            //    return targetInfo.Equals(CheckOutDevice(targetIP));
-            //}
-            //else if (IsBCStop)
-            //{
-            //    return deviceDictionary.ContainsKey(targetIP);
-            //}
-            return true;
+            // TODO: 加个确认连接事件，在任务栏图标那边利用主线程弹出对话框
+
+            if (msgData.Length >= MsgPacket.HEADER_LENGTH && ipe.Port == config.MsgPort)
+            {
+                //buf长度以及目标端口符合，尝试构建数据报文对象
+                packet = MessageAdapter.PackMsgData(msgData);
+                // TODO: 将0x01替换为对应的Handler类常量
+                if (packet != null && (packet.MainFunCode.Equals(0x01) || IsCtrlConnected))
+                {
+                    //数据报文构建成功，且，报文是连接功能相关报文或当前已连接Ctrl
+                    return true;
+                }
+            }
+
+            //其余情况下，均不处理
+            packet = null;
+            return false;
         }
 
+        /// <summary>
+        /// 收到UDP数据报文事件
+        /// </summary>
         private void UdpHandler_HandleUDPReceived(object sender, HandleUDPEventArgs e)
         {
-            if (ShouldHandleMsg(e.IPE.Address))
+            if (ShouldHandleMsg(e.DataBuf, e.IPE, out MsgPacket packet))
             {
-                MsgPacket packet = MessageAdapter.PackDataBuf(e.DataBuf, e.Length);
-                Logging.Debug($"type:{packet.TypeStr}, data:{packet.DataStr}.");
-                MessageAdapter.CreateMsgHandler(packet)?.Handle(this, e.IPE.Address);
+                //处理数据报文
+                Logging.Debug($"header:{packet.HeaderHexStr}, data:{packet.DataHexStr}.");
+                //MessageAdapter.HandleUDPPacket(this, packet, e.IPE);
             }
         }
 
